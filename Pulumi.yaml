@@ -1,0 +1,7 @@
+name: dreamlab
+runtime: go
+description: dreamlab infrastructure
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-go
