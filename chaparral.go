@@ -3,6 +3,7 @@ package main
 import (
 	ec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ecs"
+	"github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/awsx"
 	ec2x "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ec2"
 	"github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
 	ecrx "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
@@ -73,6 +74,16 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 				Cpu:       pulumi.Int(cpu),
 				Memory:    pulumi.Int(memory),
 				Essential: pulumi.Bool(true),
+				Environment: ecsx.TaskDefinitionKeyValuePairArray{
+					&ecsx.TaskDefinitionKeyValuePairArgs{
+						Name:  pulumi.String("CHAPARRAL_BACKEND"),
+						Value: pulumi.String(""),
+					},
+					&ecsx.TaskDefinitionKeyValuePairArgs{
+						Name:  pulumi.String("LITESTREAM_REPLICA_URL"),
+						Value: pulumi.String(""),
+					},
+				},
 				PortMappings: ecsx.TaskDefinitionPortMappingArray{
 					&ecsx.TaskDefinitionPortMappingArgs{
 						ContainerPort: pulumi.Int(containerPort),
@@ -80,11 +91,11 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 					},
 				},
 			},
+			TaskRole: &awsx.DefaultRoleWithPolicyArgs{},
 		},
 	})
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
