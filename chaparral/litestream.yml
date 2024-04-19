@@ -1,0 +1,5 @@
+dbs:
+  - path: /tmp/chaparral.sqlite3
+    replicas:
+      - url: s3://ocfl/chaparral.sqlite3
+        region: us-west-2

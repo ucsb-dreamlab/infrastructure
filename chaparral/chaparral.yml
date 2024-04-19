@@ -24,6 +24,8 @@
 # this directory. The default value ("") disables uploads.
 uploads: "uploads"
 
+db: /tmp/chaparral.sqlite3
+
 # Sorage Root config
 #
 # Multiple OCFL storage roots can be configured. If the storage root
