@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/acm"
 	ec2 "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
-	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ecs"
+	// "github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ecs"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/route53"
 	ec2x "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ec2"
 	// ecrx "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
@@ -22,13 +22,7 @@ func main() {
 			return err
 		}
 
-		// An ECS cluster to deploy into
-		cluster, err := ecs.NewCluster(ctx, "dreamlab-cluster", nil)
-		if err != nil {
-			return err
-		}
-
-		sg, err := ec2.NewSecurityGroup(ctx, "dreamlab-tls-sg", &ec2.SecurityGroupArgs{
+		sg, err := ec2.NewSecurityGroup(ctx, "dreamlab-lb-tls-sg", &ec2.SecurityGroupArgs{
 			VpcId: vpc.VpcId,
 			Ingress: &ec2.SecurityGroupIngressArray{
 				&ec2.SecurityGroupIngressArgs{
@@ -97,9 +91,9 @@ func main() {
 				CertificateArn: cert.Arn,
 			},
 			DefaultTargetGroup: &lbx.TargetGroupArgs{
-				Port:            pulumi.Int(80),
-				Protocol:        pulumi.String("HTTP"),
-				ProtocolVersion: pulumi.String("HTTP2"),
+				Port:     pulumi.Int(80),
+				Protocol: pulumi.String("HTTP"),
+				// ProtocolVersion: pulumi.String("HTTP2"),
 			},
 			SecurityGroups: pulumi.StringArray{sg.ID()},
 		})
@@ -127,7 +121,12 @@ func main() {
 		// 	return err
 		// }
 
-		chaparral(ctx, vpc, nil, cluster, loadbalancer)
+		// An ECS cluster to deploy into
+		// cluster, err = ecs.NewCluster(ctx, "dreamlab-cluster", nil)
+		// if err != nil {
+		// 	return err
+		// }
+		// chaparral(ctx, vpc, nil, cluster, loadbalancer)
 		// The URL at which the container's HTTP endpoint will be available
 		ctx.Export("url", pulumi.Sprintf("http://%s", loadbalancer.LoadBalancer.DnsName()))
 		return nil
