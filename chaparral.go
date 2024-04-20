@@ -21,10 +21,10 @@ const assumeRolPolicy = `{
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": "sts:AssumeRole"
+      "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
+        "Service": ["ecs-task.amazonaws.com"]
+      }
     }
   ]
 }`
@@ -73,11 +73,14 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 	// 	memory = param
 	// }
 
+	dockerV := ecrx.BuilderVersionBuilderV1
+
 	// Build and publish our application's container image from ./app to the ECR repository
 	image, err := ecrx.NewImage(ctx, "image", &ecr.ImageArgs{
-		RepositoryUrl: repo.Url,
-		Context:       pulumi.String("./chaparral"),
-		Platform:      pulumi.String("linux/amd64"),
+		RepositoryUrl:  repo.Url,
+		BuilderVersion: &dockerV,
+		Context:        pulumi.String("./chaparral"),
+		Platform:       pulumi.String("linux/amd64"),
 	})
 	if err != nil {
 		return err
@@ -85,6 +88,15 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 
 	sg, err := ec2.NewSecurityGroup(ctx, "chaparral-sg", &ec2.SecurityGroupArgs{
 		VpcId: vpc.VpcId,
+		Ingress: &ec2.SecurityGroupIngressArray{
+			&ec2.SecurityGroupIngressArgs{
+				FromPort:       pulumi.Int(8080),
+				ToPort:         pulumi.Int(8080),
+				Protocol:       pulumi.String("tcp"),
+				CidrBlocks:     pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				Ipv6CidrBlocks: pulumi.StringArray{pulumi.String("::/0")},
+			},
+		},
 		Egress: ec2.SecurityGroupEgressArray{
 			&ec2.SecurityGroupEgressArgs{
 				FromPort: pulumi.Int(0),
@@ -120,8 +132,8 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 	_, err = ecsx.NewFargateService(ctx, "chaparral-service", &ecsx.FargateServiceArgs{
 		Cluster: cluster.Arn,
 		NetworkConfiguration: &ecs.ServiceNetworkConfigurationArgs{
-			AssignPublicIp: pulumi.Bool(true),
-			Subnets:        vpc.PublicSubnetIds,
+			// AssignPublicIp: pulumi.Bool(true),
+			Subnets: vpc.PrivateSubnetIds,
 			SecurityGroups: pulumi.StringArray{
 				sg.ID(),
 			},
@@ -146,6 +158,7 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 				PortMappings: ecsx.TaskDefinitionPortMappingArray{
 					&ecsx.TaskDefinitionPortMappingArgs{
 						ContainerPort: pulumi.Int(containerPort),
+						HostPort:      pulumi.Int(containerPort),
 						TargetGroup:   lb.DefaultTargetGroup,
 					},
 				},
