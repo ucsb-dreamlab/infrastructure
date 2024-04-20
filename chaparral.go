@@ -9,7 +9,7 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/awsx"
 	ec2x "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ec2"
-	"github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
+	// "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
 	ecrx "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecr"
 	ecsx "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/ecs"
 	lbx "github.com/pulumi/pulumi-awsx/sdk/v2/go/awsx/lb"
@@ -23,7 +23,7 @@ const assumeRolPolicy = `{
       "Effect": "Allow",
       "Action": "sts:AssumeRole",
       "Principal": {
-        "Service": ["ecs-task.amazonaws.com"]
+        "Service": ["ecs-tasks.amazonaws.com"]
       }
     }
   ]
@@ -58,9 +58,9 @@ func chaparralTaskPolicyDocument(bucket string) pulumi.String {
 	return pulumi.String(string(doc))
 }
 
-func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluster *ecs.Cluster, lb *lbx.ApplicationLoadBalancer) error {
+func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, _ *ecrx.Repository, cluster *ecs.Cluster, lb *lbx.ApplicationLoadBalancer) error {
 	// cfg := config.New(ctx, "")
-	containerPort := 8080
+	containerPort := 80
 	// if param := cfg.GetInt("containerPort"); param != 0 {
 	// 	containerPort = param
 	// }
@@ -73,25 +73,25 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 	// 	memory = param
 	// }
 
-	dockerV := ecrx.BuilderVersionBuilderV1
+	// dockerV := ecrx.BuilderVersionBuilderV1
 
 	// Build and publish our application's container image from ./app to the ECR repository
-	image, err := ecrx.NewImage(ctx, "image", &ecr.ImageArgs{
-		RepositoryUrl:  repo.Url,
-		BuilderVersion: &dockerV,
-		Context:        pulumi.String("./chaparral"),
-		Platform:       pulumi.String("linux/amd64"),
-	})
-	if err != nil {
-		return err
-	}
+	// image, err := ecrx.NewImage(ctx, "image", &ecr.ImageArgs{
+	// 	RepositoryUrl:  repo.Url,
+	// 	BuilderVersion: &dockerV,
+	// 	Context:        pulumi.String("./chaparral"),
+	// 	Platform:       pulumi.String("linux/amd64"),
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	sg, err := ec2.NewSecurityGroup(ctx, "chaparral-sg", &ec2.SecurityGroupArgs{
 		VpcId: vpc.VpcId,
 		Ingress: &ec2.SecurityGroupIngressArray{
 			&ec2.SecurityGroupIngressArgs{
-				FromPort:       pulumi.Int(8080),
-				ToPort:         pulumi.Int(8080),
+				FromPort:       pulumi.Int(containerPort),
+				ToPort:         pulumi.Int(containerPort),
 				Protocol:       pulumi.String("tcp"),
 				CidrBlocks:     pulumi.StringArray{pulumi.String("0.0.0.0/0")},
 				Ipv6CidrBlocks: pulumi.StringArray{pulumi.String("::/0")},
@@ -129,32 +129,32 @@ func chaparral(ctx *pulumi.Context, vpc *ec2x.Vpc, repo *ecrx.Repository, cluste
 	}
 
 	// Deploy an ECS Service on Fargate to host the application container
-	_, err = ecsx.NewFargateService(ctx, "chaparral-service", &ecsx.FargateServiceArgs{
+	_, err = ecsx.NewFargateService(ctx, "nginx-service", &ecsx.FargateServiceArgs{
 		Cluster: cluster.Arn,
 		NetworkConfiguration: &ecs.ServiceNetworkConfigurationArgs{
 			// AssignPublicIp: pulumi.Bool(true),
-			Subnets: vpc.PrivateSubnetIds,
+			Subnets: vpc.PublicSubnetIds,
 			SecurityGroups: pulumi.StringArray{
 				sg.ID(),
 			},
 		},
 		TaskDefinitionArgs: &ecsx.FargateServiceTaskDefinitionArgs{
 			Container: &ecsx.TaskDefinitionContainerDefinitionArgs{
-				Name:      pulumi.String("app"),
-				Image:     image.ImageUri,
+				Name:      pulumi.String("nginx-test"),
+				Image:     pulumi.String("nginx:latest"),
 				Cpu:       pulumi.Int(cpu),
 				Memory:    pulumi.Int(memory),
 				Essential: pulumi.Bool(true),
-				Environment: ecsx.TaskDefinitionKeyValuePairArray{
-					&ecsx.TaskDefinitionKeyValuePairArgs{
-						Name:  pulumi.String("CHAPARRAL_BACKEND"),
-						Value: pulumi.String(""),
-					},
-					&ecsx.TaskDefinitionKeyValuePairArgs{
-						Name:  pulumi.String("LITESTREAM_REPLICA_URL"),
-						Value: pulumi.String(""),
-					},
-				},
+				// Environment: ecsx.TaskDefinitionKeyValuePairArray{
+				// 	&ecsx.TaskDefinitionKeyValuePairArgs{
+				// 		Name:  pulumi.String("CHAPARRAL_BACKEND"),
+				// 		Value: pulumi.String(""),
+				// 	},
+				// 	&ecsx.TaskDefinitionKeyValuePairArgs{
+				// 		Name:  pulumi.String("LITESTREAM_REPLICA_URL"),
+				// 		Value: pulumi.String(""),
+				// 	},
+				// },
 				PortMappings: ecsx.TaskDefinitionPortMappingArray{
 					&ecsx.TaskDefinitionPortMappingArgs{
 						ContainerPort: pulumi.Int(containerPort),

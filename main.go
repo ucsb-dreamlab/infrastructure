@@ -23,7 +23,7 @@ func main() {
 		}
 
 		// An ECS cluster to deploy into
-		_, err = ecs.NewCluster(ctx, "dreamlab-cluster", nil)
+		cluster, err := ecs.NewCluster(ctx, "dreamlab-cluster", nil)
 		if err != nil {
 			return err
 		}
@@ -97,9 +97,9 @@ func main() {
 				CertificateArn: cert.Arn,
 			},
 			DefaultTargetGroup: &lbx.TargetGroupArgs{
-				Port:            pulumi.Int(8080),
+				Port:            pulumi.Int(80),
 				Protocol:        pulumi.String("HTTP"),
-				ProtocolVersion: pulumi.String("GRPC"),
+				ProtocolVersion: pulumi.String("HTTP2"),
 			},
 			SecurityGroups: pulumi.StringArray{sg.ID()},
 		})
@@ -127,7 +127,7 @@ func main() {
 		// 	return err
 		// }
 
-		// chaparral(ctx, vpc, repo, cluster, loadbalancer)
+		chaparral(ctx, vpc, nil, cluster, loadbalancer)
 		// The URL at which the container's HTTP endpoint will be available
 		ctx.Export("url", pulumi.Sprintf("http://%s", loadbalancer.LoadBalancer.DnsName()))
 		return nil
