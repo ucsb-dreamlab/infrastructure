@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	_ "embed"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -18,6 +19,9 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 	"golang.org/x/crypto/ssh"
 )
+
+//go:embed assets/aws-policy-coder.json
+var awsPolicyCoder string
 
 const (
 	keyDir              = "keys"

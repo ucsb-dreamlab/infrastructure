@@ -68,7 +68,9 @@ func main() {
 		zoneID := pulumi.String(zoneLookup.Id)
 
 		apiInstance, err := newInstance(ctx, "api", vpc, sg, bucketPolicyDocument("ocfl"), zoneID)
+		coderInstance, err := newInstance(ctx, "coder", vpc, sg, pulumi.String(awsPolicyCoder), zoneID)
 		ctx.Export("api-ip", apiInstance.PublicIp)
+		ctx.Export("coder-ip", coderInstance.PublicIp)
 		return nil
 	})
 }
