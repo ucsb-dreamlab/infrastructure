@@ -22,7 +22,7 @@ func main() {
 		vpc, err := ec2x.NewVpc(ctx, resourceName("vpc"), &ec2x.VpcArgs{
 			NumberOfAvailabilityZones: pulumi.IntRef(2),
 			NatGateways: &ec2x.NatGatewayConfigurationArgs{
-				Strategy: ec2x.NatGatewayStrategyNone,
+				Strategy: ec2x.NatGatewayStrategySingle,
 			}})
 		if err != nil {
 			return err
@@ -69,6 +69,14 @@ func main() {
 
 		apiInstance, err := newInstance(ctx, "api", vpc, sg, bucketPolicyDocument("ocfl"), zoneID)
 		coderInstance, err := newInstance(ctx, "coder", vpc, sg, pulumi.String(awsPolicyCoder), zoneID)
+		_, err = route53.NewRecord(ctx, "coder-wildcard-dns", &route53.RecordArgs{
+			Name:    pulumi.String("*.coder." + conf.Get("dns_zone")),
+			ZoneId:  pulumi.String(zoneID),
+			Type:    pulumi.String("A"),
+			Records: pulumi.StringArray{coderInstance.PublicIp},
+			Ttl:     pulumi.Int(600),
+		})
+
 		ctx.Export("api-ip", apiInstance.PublicIp)
 		ctx.Export("coder-ip", coderInstance.PublicIp)
 		return nil

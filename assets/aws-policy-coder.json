@@ -2,13 +2,35 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "VisualEditor0",
+      "Sid": "CoderRoute53",
+      "Effect": "Allow",
+      "Action": [
+        "route53:ListHostedZones",
+        "route53:GetChange"
+      ],
+      "Resource": [
+        "*"
+      ]
+    },
+    {
+      "Sid": "CoderRoute53Records",
+      "Effect": "Allow",
+      "Action": [
+        "route53:ChangeResourceRecordSets"
+      ],
+      "Resource": [
+        "arn:aws:route53:::hostedzone/Z006511933NEYR1X2XCJR"
+      ]
+    },
+    {
+      "Sid": "CoderEC2",
       "Effect": "Allow",
       "Action": [
         "ec2:GetDefaultCreditSpecification",
         "ec2:DescribeIamInstanceProfileAssociations",
         "ec2:DescribeTags",
         "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
         "ec2:DescribeInstanceTypes",
         "ec2:CreateTags",
         "ec2:RunInstances",
@@ -20,7 +42,7 @@
       "Resource": "*"
     },
     {
-      "Sid": "CoderResources",
+      "Sid": "CoderEC2Resources",
       "Effect": "Allow",
       "Action": [
         "ec2:DescribeInstanceAttribute",
