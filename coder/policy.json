@@ -8,19 +8,13 @@
         "route53:ListHostedZones",
         "route53:GetChange"
       ],
-      "Resource": [
-        "*"
-      ]
+      "Resource": ["*"]
     },
     {
       "Sid": "CoderRoute53Records",
       "Effect": "Allow",
-      "Action": [
-        "route53:ChangeResourceRecordSets"
-      ],
-      "Resource": [
-        "arn:aws:route53:::hostedzone/Z006511933NEYR1X2XCJR"
-      ]
+      "Action": ["route53:ChangeResourceRecordSets"],
+      "Resource": "arn:aws:route53:::hostedzone/*"
     },
     {
       "Sid": "CoderEC2",
@@ -30,6 +24,7 @@
         "ec2:DescribeIamInstanceProfileAssociations",
         "ec2:DescribeTags",
         "ec2:DescribeInstances",
+        "ec2:DescribeSubnets",
         "ec2:DescribeInstanceStatus",
         "ec2:DescribeInstanceTypes",
         "ec2:CreateTags",

@@ -9,33 +9,9 @@ terraform {
   }
 }
 
-# Last updated 2023-03-14
-# aws ec2 describe-regions | jq -r '[.Regions[].RegionName] | sort'
-data "coder_parameter" "region" {
-  name         = "region"
-  display_name = "Region"
-  description  = "The region to deploy the workspace in."
-  default      = "us-west-2"
-  mutable      = false
-  option {
-    name  = "US East (N. Virginia)"
-    value = "us-east-1"
-    icon  = "/emojis/1f1fa-1f1f8.png"
-  }
-  option {
-    name  = "US East (Ohio)"
-    value = "us-east-2"
-    icon  = "/emojis/1f1fa-1f1f8.png"
-  }
-  option {
-    name  = "US West (N. California)"
-    value = "us-west-1"
-    icon  = "/emojis/1f1fa-1f1f8.png"
-  }
-  option {
-    name  = "US West (Oregon)"
-    value = "us-west-2"
-    icon  = "/emojis/1f1fa-1f1f8.png"
+data "aws_subnets" "private" {
+  tags = {
+    Coder_Workspaces = "true"
   }
 }
 
@@ -43,56 +19,44 @@ data "coder_parameter" "instance_type" {
   name         = "instance_type"
   display_name = "Instance type"
   description  = "What instance type should your workspace use?"
-  default      = "t4g.micro"
+  default      = "t3.micro"
   mutable      = false
   option {
     name  = "2 vCPU, 1 GiB RAM"
-    value = "t4g.micro"
+    value = "t3.micro"
   }
   option {
     name  = "2 vCPU, 2 GiB RAM"
-    value = "t4g.small"
+    value = "t3.small"
   }
   option {
     name  = "2 vCPU, 4 GiB RAM"
-    value = "t4g.medium"
+    value = "t3.medium"
   }
   option {
     name  = "2 vCPU, 8 GiB RAM"
-    value = "t4g.large"
+    value = "t3.large"
   }
   option {
     name  = "4 vCPU, 16 GiB RAM"
-    value = "t4g.xlarge"
+    value = "t3.xlarge"
   }
   option {
     name  = "8 vCPU, 32 GiB RAM"
-    value = "t4g.2xlarge"
+    value = "t3.2xlarge"
   }
 }
 
 provider "aws" {
-  region = data.coder_parameter.region.value
+  region = "us-west-2"
 }
 
 data "coder_workspace" "me" {
 }
 
-data "aws_ami" "debian" {
-  most_recent = true
-  filter {
-    name   = "name"
-    values = ["debian-12-arm64-20231013-1532"]
-  }
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
 resource "coder_agent" "dev" {
   count          = data.coder_workspace.me.start_count
-  arch           = "arm64"
+  arch           = "amd64"
   auth           = "aws-instance-identity"
   os             = "linux"
   startup_script = <<-EOT
@@ -177,12 +141,14 @@ locals {
 }
 
 resource "aws_instance" "dev" {
-  ami               = data.aws_ami.debian.id
-  availability_zone = "${data.coder_parameter.region.value}a"
+  ami               = "ami-0cf2b4e024cdb6960" # ubuntu
+  availability_zone = "us-west-2a"
   instance_type     = data.coder_parameter.instance_type.value
-  subnet_id = "subnet-0594e4352ddd7075c"
-
+  subnet_id = tolist(data.aws_subnets.private.ids)[0]
   user_data = local.user_data
+  root_block_device {
+    volume_size = 24
+  }
   tags = {
     Name = "coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}"
     # Required if you are using our example policy, see template README
@@ -197,7 +163,7 @@ resource "coder_metadata" "workspace_info" {
   resource_id = aws_instance.dev.id
   item {
     key   = "region"
-    value = data.coder_parameter.region.value
+    value = "us-west-2"
   }
   item {
     key   = "instance type"
