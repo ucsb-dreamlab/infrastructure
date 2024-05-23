@@ -1,0 +1,13 @@
+name: dreamlab
+runtime: go
+description: dreamlab infrastructure
+config:
+  coder_instance_type: m7g.medium
+  coder_instance_ami: ami-07564a05443c48891
+  dns_zone:
+    type: string
+    default: dreamlab.ucsb.edu
+    description: hosted zone for new DNS records
+  pulumi:tags:
+    value:
+      pulumi:template: aws-go
