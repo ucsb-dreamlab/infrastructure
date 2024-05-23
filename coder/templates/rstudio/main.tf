@@ -9,20 +9,38 @@ terraform {
   }
 }
 
+
+data "aws_subnets" "private" {
+  tags = {
+    Coder_Workspaces = "true"
+  }
+}
+
+data "coder_parameter" "rocker_image" {
+  name = "rocker_image"
+  display_name = "Rocker Image"
+  description = "see https://rocker-project.org/images/"
+  default = "rocker/tidyverse"
+  option {
+    name = "rstudio"
+    value = "rocker/rstudio"
+  }
+  option {
+    name = "tidyverse"
+    value = "rocker/tidyverse"
+  }
+  option {
+    name = "geospatial"
+    value = "rocker/geospatial"
+  }
+}
+
 data "coder_parameter" "instance_type" {
   name         = "instance_type"
   display_name = "Instance type"
   description  = "What instance type should your workspace use?"
-  default      = "t3.micro"
+  default      = "t3.medium"
   mutable      = false
-  option {
-    name  = "2 vCPU, 1 GiB RAM"
-    value = "t3.micro"
-  }
-  option {
-    name  = "2 vCPU, 2 GiB RAM"
-    value = "t3.small"
-  }
   option {
     name  = "2 vCPU, 4 GiB RAM"
     value = "t3.medium"
@@ -41,6 +59,30 @@ data "coder_parameter" "instance_type" {
   }
 }
 
+
+
+data "coder_parameter" "instance_disk" {
+  name         = "instance_disk"
+  type         = "number"
+  display_name = "Instance Disk Size"
+  description  = "How much disk space for your workspace?"
+  default      = 24
+  mutable      = false
+  option {
+    name  = "24 GiB"
+    value = 24
+  }
+  option {
+    name  = "64 GiB"
+    value = 64
+  }
+  option {
+    name  = "128 GiB"
+    value = 128
+  }
+}
+
+
 provider "aws" {
   region = "us-west-2"
 }
@@ -56,15 +98,21 @@ resource "coder_agent" "dev" {
   os             = "linux"
   startup_script = <<-EOT
     set -e
-    
-    # install and start code-server
-    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server --version 4.11.0
-    /tmp/code-server/bin/code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
-    
-    # rstudio
-    mkdir -p workspace
-    podman run --rm -d -p 127.0.0.1:8787:8787 -e PASSWORD=rstudio -v $(pwd)/workspace:/root/workspace docker.io/rocker/tidyverse
-
+    # run rstudio
+    podman run --rm -d \
+        -p 127.0.0.1:8787:8787 \
+        -v $(pwd):/root \
+        -v $(echo $GIT_SSH_COMMAND | cut -d" " -f1):/tmp/coder/coder \
+        -e DISABLE_AUTH=true \
+        -e GIT_SSH_COMMAND='/tmp/coder/coder gitssh --' \
+        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
+        -e CODER="$CODER" \
+        -e CODER_AGENT_AUTH="$CODER_AGENT_AUTH" \
+        -e CODER_AGENT_TOKEN="$CODER_AGENT_TOKEN" \
+        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
+        -e CODER_WORKSPACE_AGENT_NAME="$CODER_WORKSPACE_AGENT_NAME" \
+        -e CODER_WORKSPACE_NAME="$CODER_WORKSPACE_NAME" \
+        docker.io/${data.coder_parameter.rocker_image.value}
   EOT
 
   metadata {
@@ -106,22 +154,6 @@ resource "coder_app" "rstudio" {
   }
 }
 
-resource "coder_app" "code-server" {
-  count        = data.coder_workspace.me.start_count
-  agent_id     = coder_agent.dev[0].id
-  slug         = "code-server"
-  display_name = "code-server"
-  url          = "http://localhost:13337/?folder=/home/coder"
-  icon         = "/icon/code.svg"
-  subdomain    = false
-  share        = "owner"
-
-  healthcheck {
-    url       = "http://localhost:13337/healthz"
-    interval  = 3
-    threshold = 10
-  }
-}
 
 locals {
   linux_user = "coder"
@@ -160,14 +192,14 @@ locals {
 }
 
 resource "aws_instance" "dev" {
-  subnet_id                   = "subnet-0d4e0be5974a736ef"
-  availability_zone           = "us-west-2a"
-  ami                         = "ami-0cf2b4e024cdb6960"
+  ami               = "ami-0cf2b4e024cdb6960" # ubuntu
+  availability_zone = "us-west-2a"
+  instance_type     = data.coder_parameter.instance_type.value
+  subnet_id = tolist(data.aws_subnets.private.ids)[0]
   associate_public_ip_address = false
-  instance_type               = data.coder_parameter.instance_type.value
-  user_data                   = local.user_data
+  user_data = local.user_data
   root_block_device {
-    volume_size = 64
+    volume_size = tonumber(data.coder_parameter.instance_disk.value)
   }
   tags = {
     Name = "coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}"

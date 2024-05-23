@@ -130,29 +130,6 @@ resource "coder_app" "code-server" {
   }
 }
 
-resource "coder_app" "RStudio" {
-  count        = data.coder_workspace.me.start_count
-  agent_id     = coder_agent.dev[0].id
-  slug         = "rstudio"
-  display_name = "RStudio"
-  command      = <<-EOT
-    podman run --rm --name rstudio \
-        -p 127.0.0.1:8787:8787 \
-        -v $(pwd):/root \
-        -v $(echo $GIT_SSH_COMMAND | cut -d" " -f1):/tmp/coder/coder \
-        -e DISABLE_AUTH=true \
-        -e GIT_SSH_COMMAND='/tmp/coder/coder gitssh --' \
-        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
-        -e CODER="$CODER" \
-        -e CODER_AGENT_AUTH="$CODER_AGENT_AUTH" \
-        -e CODER_AGENT_TOKEN="$CODER_AGENT_TOKEN" \
-        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
-        -e CODER_WORKSPACE_AGENT_NAME="$CODER_WORKSPACE_AGENT_NAME" \
-        -e CODER_WORKSPACE_NAME="$CODER_WORKSPACE_NAME" \
-        docker.io/rocker/tidyverse
-  EOT
-}
-
 
 locals {
   linux_user = "coder"
