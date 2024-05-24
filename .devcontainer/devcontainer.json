@@ -1,0 +1,21 @@
+{
+    "name": "devcontainer-extra-aws",
+    "remoteUser": "vscode",
+    "dockerFile": "Dockerfile",
+    "init": true,
+    "runArgs": [],
+    "privileged": true,
+    "overrideCommand": false,
+    "updateRemoteUserUID": true,
+    "shutdownAction": "stopContainer",
+    "securityOpt": ["seccomp=unconfined"],
+    "features": {
+      "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+    },
+    "mounts": ["source=dind-var-lib-docker,target=/var/lib/docker,type=volume"],
+    "postCreateCommand": "devcontainer-links",
+    //"workspaceFolder": "/workspaces/devcontainer",
+    //"workspaceMount": "source=.,target=/home/vscode/devcontainer,type=bind,consistency=cached",
+    //"workspaceFolder": "/home/vscode/devcontainer",
+    "forwardPorts": [1313, 2222, 6000, 7681, 8080]
+  }
