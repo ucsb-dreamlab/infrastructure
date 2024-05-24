@@ -39,9 +39,16 @@ locals {
 
   #!/bin/bash
   
-  # install podman
-  apt update && apt install -y podman
-  loginctl enable-linger $(id -u ${local.linux_user})
+  # Install Docker
+  if ! command -v docker &> /dev/null
+  then
+    echo "Docker not found, installing..."
+    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
+    usermod -aG docker ${local.linux_user}
+    newgrp docker
+  else
+    echo "Docker is already installed."
+  fi
   
   # run coder agent
   sudo -u ${local.linux_user} sh -c '${try(coder_agent.dev[0].init_script, "")}'
