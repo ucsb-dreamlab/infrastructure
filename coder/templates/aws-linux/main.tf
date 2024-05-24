@@ -9,6 +9,46 @@ terraform {
   }
 }
 
+locals {
+  aws_region = "us-west-2"
+  linux_user = "coder"
+  user_data  = <<-EOT
+  Content-Type: multipart/mixed; boundary="//"
+  MIME-Version: 1.0
+
+  --//
+  Content-Type: text/cloud-config; charset="us-ascii"
+  MIME-Version: 1.0
+  Content-Transfer-Encoding: 7bit
+  Content-Disposition: attachment; filename="cloud-config.txt"
+
+  #cloud-config
+  cloud_final_modules:
+  - [scripts-user, always]
+  hostname: ${lower(data.coder_workspace.me.name)}
+  users:
+  - name: ${local.linux_user}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+
+  --//
+  Content-Type: text/x-shellscript; charset="us-ascii"
+  MIME-Version: 1.0
+  Content-Transfer-Encoding: 7bit
+  Content-Disposition: attachment; filename="userdata.txt"
+
+  #!/bin/bash
+  
+  # install podman
+  apt update && apt install -y podman
+  loginctl enable-linger $(id -u ${local.linux_user})
+  
+  # run coder agent
+  sudo -u ${local.linux_user} sh -c '${try(coder_agent.dev[0].init_script, "")}'
+  --//--
+  EOT
+}
+
 data "aws_subnets" "private" {
   tags = {
     Coder_Workspaces = "true"
@@ -47,8 +87,6 @@ data "coder_parameter" "instance_type" {
   }
 }
 
-
-
 data "coder_parameter" "instance_disk" {
   name         = "instance_disk"
   type         = "number"
@@ -71,7 +109,7 @@ data "coder_parameter" "instance_disk" {
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = local.aws_region
 }
 
 data "coder_workspace" "me" {
@@ -84,7 +122,6 @@ resource "coder_agent" "dev" {
   os             = "linux"
   startup_script = <<-EOT
     set -e
-
     # install and start code-server
     curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server --version 4.11.0
     /tmp/code-server/bin/code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
@@ -130,47 +167,9 @@ resource "coder_app" "code-server" {
   }
 }
 
-
-locals {
-  linux_user = "coder"
-  user_data  = <<-EOT
-  Content-Type: multipart/mixed; boundary="//"
-  MIME-Version: 1.0
-
-  --//
-  Content-Type: text/cloud-config; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="cloud-config.txt"
-
-  #cloud-config
-  cloud_final_modules:
-  - [scripts-user, always]
-  hostname: ${lower(data.coder_workspace.me.name)}
-  users:
-  - name: ${local.linux_user}
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-
-  --//
-  Content-Type: text/x-shellscript; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="userdata.txt"
-
-  #!/bin/bash
-  # install podman
-  sudo apt update && apt install -y podman
-  sudo loginctl enable-linger 1000
-  # run agent
-  sudo -u ${local.linux_user} sh -c '${try(coder_agent.dev[0].init_script, "")}'
-  --//--
-  EOT
-}
-
 resource "aws_instance" "dev" {
   ami               = "ami-0cf2b4e024cdb6960" # ubuntu
-  availability_zone = "us-west-2a"
+  availability_zone = "${local.aws_region}a"
   instance_type     = data.coder_parameter.instance_type.value
   subnet_id = tolist(data.aws_subnets.private.ids)[0]
   user_data = local.user_data
@@ -191,7 +190,7 @@ resource "coder_metadata" "workspace_info" {
   resource_id = aws_instance.dev.id
   item {
     key   = "region"
-    value = "us-west-2"
+    value = local.aws_region
   }
   item {
     key   = "instance type"
