@@ -50,15 +50,16 @@ locals {
     echo "Docker is already installed."
   fi
   
- # Start envbuilder
+  # Start envbuilder
+  mkdir -p /home/${local.linux_user}/envbuilder
   docker run --rm \
     -h ${lower(data.coder_workspace.me.name)} \
     -v /home/${local.linux_user}/envbuilder:/workspaces \
     -e CODER_AGENT_TOKEN="${try(coder_agent.dev[0].token, "")}" \
     -e CODER_AGENT_URL="${data.coder_workspace.me.access_url}" \
-    -e ENVBUILDER_GIT_URL="${data.coder_parameter.repo_url.value}" \
-    -e ENVBUILDER_INIT_SCRIPT="echo ${base64encode(try(coder_agent.dev[0].init_script, ""))} | base64 -d | sh" \
-    -e ENVBUILDER_FALLBACK_IMAGE="codercom/enterprise-base:ubuntu" \
+    -e GIT_URL="${data.coder_parameter.repo_url.value}" \
+    -e INIT_SCRIPT="echo ${base64encode(try(coder_agent.dev[0].init_script, ""))} | base64 -d | sh" \
+    -e FALLBACK_IMAGE="codercom/enterprise-base:ubuntu" \
     ghcr.io/coder/envbuilder
   --//--
   EOT
