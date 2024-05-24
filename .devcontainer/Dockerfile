@@ -29,6 +29,20 @@ RUN echo \
     && ${TEST} \
     && echo
 
-RUN curl -L https://coder.com/install.sh | sh
+
+# install tofu
+RUN echo \
+    && export TOFU_URL=https://get.opentofu.org/install-opentofu.sh \
+    && export TOFU_SCRIPT=install-opentofu.sh \
+    && curl --proto '=https' --tlsv1.2 -fsSL  ${TOFU_URL} -o ${TOFU_SCRIPT} \
+    && chmod +x ${TOFU_SCRIPT} \
+    && ./${TOFU_SCRIPT} --install-method deb \
+    && rm -f ${TOFU_SCRIPT}
+
+
+# install coder
+RUN echo \
+    && export CODER_URL=https://coder.com/install.sh \
+    && curl -L ${CODER_URL} | sh
 
 USER vscode
