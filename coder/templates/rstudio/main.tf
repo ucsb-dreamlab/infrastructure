@@ -99,22 +99,19 @@ resource "coder_agent" "dev" {
   startup_script = <<-EOT
     set -e
     # run rstudio
-    podman run --rm -d \
+    mkdir -p $HOME/workspace
+    podman run --rm -d --name rstudio \
         -p 127.0.0.1:8787:8787 \
-        -v $(pwd):/root \
+        -v $HOME/workspace:/root/workspace \
         -v $(echo $GIT_SSH_COMMAND | cut -d" " -f1):/tmp/coder/coder \
         -e DISABLE_AUTH=true \
         -e GIT_SSH_COMMAND='/tmp/coder/coder gitssh --' \
-        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
-        -e CODER="$CODER" \
-        -e CODER_AGENT_AUTH="$CODER_AGENT_AUTH" \
-        -e CODER_AGENT_TOKEN="$CODER_AGENT_TOKEN" \
-        -e CODER_AGENT_URL="$CODER_AGENT_URL" \
-        -e CODER_WORKSPACE_AGENT_NAME="$CODER_WORKSPACE_AGENT_NAME" \
-        -e CODER_WORKSPACE_NAME="$CODER_WORKSPACE_NAME" \
+        -e 'CODER*' \
         docker.io/${data.coder_parameter.rocker_image.value}
   EOT
 
+  shutdown_script = "podman stop rstudio"
+  
   metadata {
     key          = "cpu"
     display_name = "CPU Usage"
