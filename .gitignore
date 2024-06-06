@@ -1,4 +1,8 @@
 .terraform
 .terraform.lock.hcl
+**.tfstate
 .tool-versions
 keys
+
+jetstream2/openrc.sh
+**.tfstate
