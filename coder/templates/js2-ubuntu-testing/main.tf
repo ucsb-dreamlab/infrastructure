@@ -5,7 +5,7 @@ terraform {
     }
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.53.0"
+      version = "~> 2.0.0"
     }
   }
 }
@@ -182,22 +182,7 @@ resource "openstack_compute_instance_v2" "vm" {
   lifecycle {
     ignore_changes = [ user_data ]
   }
-  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shutoff"
+  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shelved_offloaded"
   tags = ["Name=coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}", "Coder_Provisioned=true"]  
 }
 
-# resource "coder_metadata" "workspace_info" {
-#   resource_id = aws_instance.dev.id
-#   item {
-#     key   = "region"
-#     value = local.aws_region
-#   }
-#   item {
-#     key   = "instance type"
-#     value = aws_instance.dev.instance_type
-#   }
-#   item {
-#     key   = "disk"
-#     value = "${aws_instance.dev.root_block_device[0].volume_size} GiB"
-#   }
-# }

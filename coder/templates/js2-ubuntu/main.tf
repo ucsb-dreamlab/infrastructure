@@ -5,7 +5,7 @@ terraform {
     }
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 1.53.0"
+      version = "~> 2.0.0"
     }
   }
 }
@@ -15,29 +15,40 @@ provider "openstack" {}
 
 data "coder_parameter" "instance_type" {
   name         = "instance_type"
-  display_name = "Instance type"
-  description  = "What instance type should your workspace use?"
+  display_name = "Instance Type"
+  description  = "What size instance for your workspace?"
   default      = 3
-  mutable      = false
   option {
-    name  = "m3.tiny: 1 CPU, 3GB ram, 20GB disk"
+    name  = "m3.tiny (1 CPU, 3GB ram, 20GB disk)"
     value = 1
   }
   option {
-    name  = "m3.small: 2 CPU, 6GB RAM, 20GB DISK"
+    name  = "m3.small (2 CPUs, 6GB ram, 20GB disk"
     value = 2
   }
   option {
-    name  = "m3.quad: 4 CPU, 15GB RAM, 20GB DISK"
+    name  = "m3.quad (4 CPUs, 15GB ram, 20GB disk)"
     value = 3
   }
   option {
-    name  = "m3.medium: 8 CPU, 30GB RAM, 60GB disk"
+    name  = "m3.medium (8 CPUs, 30GB ram, 60GB disk)"
     value = 4
   }
   option {
-    name  = "m3.large: 16 CPU, 60GB RAM, 60GB disk"
+    name  = "m3.large (16 CPUs, 60GB ram, 60GB disk)"
     value = 5
+  }
+}
+
+data "coder_parameter" "instance_image" {
+  name         = "instance_image"
+  display_name = "Operating System"
+  description  = "Choose an operating system for the instance."
+  default      = "b9d0deb4-4fc5-447d-a11b-24652feb5ef7"
+  mutable      = false
+  option {
+    name  = "Ubuntu Linux 24.04 LTS"
+    value = "b9d0deb4-4fc5-447d-a11b-24652feb5ef7"
   }
 }
 
@@ -158,7 +169,7 @@ resource "coder_app" "code-server" {
 # creating Ubuntu22 instance
 resource "openstack_compute_instance_v2" "vm" {
   name ="coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-  image_id  = "77df35aa-bfcb-433c-b333-4e4f2ccf0cc2"
+  image_id  = data.coder_parameter.instance_image.value
   flavor_id = data.coder_parameter.instance_type.value
   security_groups   = ["default"]
   metadata = {
@@ -171,22 +182,7 @@ resource "openstack_compute_instance_v2" "vm" {
   lifecycle {
     ignore_changes = [ user_data ]
   }
-  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shutoff"
+  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shelved_offloaded"
   tags = ["Name=coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}", "Coder_Provisioned=true"]  
 }
 
-# resource "coder_metadata" "workspace_info" {
-#   resource_id = aws_instance.dev.id
-#   item {
-#     key   = "region"
-#     value = local.aws_region
-#   }
-#   item {
-#     key   = "instance type"
-#     value = aws_instance.dev.instance_type
-#   }
-#   item {
-#     key   = "disk"
-#     value = "${aws_instance.dev.root_block_device[0].volume_size} GiB"
-#   }
-# }
