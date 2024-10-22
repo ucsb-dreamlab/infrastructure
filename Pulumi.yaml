@@ -3,7 +3,7 @@ runtime: go
 description: dreamlab infrastructure
 config:
   coder_instance_type: m7g.medium
-  coder_instance_ami: ami-07564a05443c48891
+  coder_instance_ami: ami-0a6f2bc110b300370
   dns_zone:
     type: string
     default: dreamlab.ucsb.edu
