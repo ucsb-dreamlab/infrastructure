@@ -1,0 +1,16 @@
+[Unit]
+Description=Traefik Reverse Proxy Container
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/arm64v8/traefik:v3.1
+Network=host
+Environment=AWS_REGION=us-west-2
+Volume=/var/run/podman/podman.sock:/var/run/docker.sock
+Volume=/etc/traefik/traefik.yml:/etc/traefik/traefik.yml
+Volume=/etc/traefik/acme.json:/etc/traefik/acme.json
+SecurityLabelDisable=true
+
+[Install]
+WantedBy=multi-user.target

@@ -3,12 +3,19 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/coreos/butane/config/common"
+	"github.com/hashicorp/go-multierror"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ebs"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ec2"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/route53"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
+
+	butaneConfig "github.com/coreos/butane/config"
 )
 
 const (
@@ -90,7 +97,7 @@ func awsVPC(ctx *pulumi.Context) error {
 	return nil
 }
 
-func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
+func awsCoderVM(ctx *pulumi.Context) error {
 	conf := config.New(ctx, "")
 	var (
 		hostname     = `coder`
@@ -99,22 +106,20 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 	)
 	zoneID, zoneName, err := awsDNSZone(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
 	pubSubnet, err := ec2.LookupSubnet(ctx, &ec2.LookupSubnetArgs{
 		Tags: map[string]string{"Name": pubTagName},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	vpc, err := ec2.LookupVpc(ctx, &ec2.LookupVpcArgs{
 		Tags: map[string]string{"Name": dreamlab},
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-
 	sgName := hostname + "-sg"
 	sg, err := ec2.NewSecurityGroup(ctx, sgName, &ec2.SecurityGroupArgs{
 		Name:  pulumi.String(sgName),
@@ -134,6 +139,13 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 				CidrBlocks:     pulumi.StringArray{pulumi.String("0.0.0.0/0")},
 				Ipv6CidrBlocks: pulumi.StringArray{pulumi.String("::/0")},
 			},
+			&ec2.SecurityGroupIngressArgs{
+				FromPort:       pulumi.Int(80),
+				ToPort:         pulumi.Int(80),
+				Protocol:       pulumi.String("tcp"),
+				CidrBlocks:     pulumi.StringArray{pulumi.String("0.0.0.0/0")},
+				Ipv6CidrBlocks: pulumi.StringArray{pulumi.String("::/0")},
+			},
 		},
 		Egress: &ec2.SecurityGroupEgressArray{
 			&ec2.SecurityGroupEgressArgs{
@@ -145,12 +157,12 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 			},
 		}})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	pubKey, err := getSSHKey(ctx, hostname)
 	if err != nil {
-		return nil, fmt.Errorf("ssh key for %q: %w", hostname, err)
+		return fmt.Errorf("ssh key for %q: %w", hostname, err)
 	}
 	keypairName := hostname + "-vm-keypair"
 	kp, err := ec2.NewKeyPair(ctx, keypairName, &ec2.KeyPairArgs{
@@ -158,30 +170,21 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 		PublicKey: pulumi.String(pubKey),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	instanceArgs := &ec2.InstanceArgs{
-		SubnetId:                 pulumi.String(pubSubnet.Id),
-		AssociatePublicIpAddress: pulumi.Bool(true),
-		Ami:                      pulumi.String(ami),
-		InstanceType:             pulumi.String(instanceType),
-		KeyName:                  kp.KeyName,
-		VpcSecurityGroupIds:      pulumi.StringArray{sg.ID()},
-		MetadataOptions: ec2.InstanceMetadataOptionsArgs{
-			HttpPutResponseHopLimit: pulumi.Int(2),
-			HttpTokens:              pulumi.String("required"),
-		},
-		//UserData: ,
+	userData, err := ignition()
+	if err != nil {
+		return err
 	}
-	// every instance gets a role
+
 	roleName := hostname + "-vm-role"
 	role, err := iam.NewRole(ctx, roleName, &iam.RoleArgs{
 		Name:             pulumi.String(roleName),
 		AssumeRolePolicy: pulumi.String(policyEC2AssumeRole),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	rolePolicyName := roleName + "-policy"
 	_, err = iam.NewRolePolicy(ctx, rolePolicyName, &iam.RolePolicyArgs{
@@ -190,7 +193,7 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 		Policy: pulumi.String(awsPolicyCoder),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	profileName := hostname + "-vm-profile"
@@ -199,23 +202,61 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 		Role: role.Name,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	instanceArgs.IamInstanceProfile = profile.Name
-	inst, err := ec2.NewInstance(ctx, hostname, instanceArgs)
+	varVolName := hostname + "-var"
+	varVol, err := ebs.NewVolume(ctx, varVolName, &ebs.VolumeArgs{
+		AvailabilityZone: pulumi.String(pubSubnet.AvailabilityZone),
+		Size:             pulumi.IntPtr(64),
+		Type:             pulumi.StringPtr("gp3"),
+	})
+	instanceArgs := &ec2.InstanceArgs{
+		IamInstanceProfile:  profile.Name,
+		SubnetId:            pulumi.String(pubSubnet.Id),
+		Ami:                 pulumi.String(ami),
+		InstanceType:        pulumi.String(instanceType),
+		KeyName:             kp.KeyName,
+		VpcSecurityGroupIds: pulumi.StringArray{sg.ID()},
+		MetadataOptions: ec2.InstanceMetadataOptionsArgs{
+			HttpPutResponseHopLimit: pulumi.Int(2),
+			HttpTokens:              pulumi.String("required"),
+		},
+		UserData:                pulumi.String(userData),
+		UserDataReplaceOnChange: pulumi.Bool(true),
+	}
+	inst, err := ec2.NewInstance(ctx, hostname, instanceArgs, pulumi.DeleteBeforeReplace(true))
 	if err != nil {
-		return nil, err
+		return err
 	}
+	// Attach the volume to the existing EC2 instance.
+	_, err = ec2.NewVolumeAttachment(ctx, varVolName+"-attach", &ec2.VolumeAttachmentArgs{
+		InstanceId:                  inst.ID(),
+		VolumeId:                    varVol.ID(),
+		DeviceName:                  pulumi.String("/dev/sdf"),
+		StopInstanceBeforeDetaching: pulumi.BoolPtr(true),
+	}, pulumi.DeleteBeforeReplace(true))
+	if err != nil {
+		return err
+	}
+	eiPName := hostname + "-eip"
+	eip, err := ec2.NewEip(ctx, eiPName, &ec2.EipArgs{
+		Domain:   pulumi.String("vpc"),
+		Instance: inst.ID(),
+	})
+	if err != nil {
+		return err
+	}
+
 	recordName := hostname + "-dns"
 	_, err = route53.NewRecord(ctx, recordName, &route53.RecordArgs{
 		Name:    pulumi.String(hostname + "." + zoneName),
 		ZoneId:  pulumi.String(zoneID),
 		Type:    pulumi.String("A"),
-		Records: pulumi.StringArray{inst.PublicIp},
+		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	wildcardRecordName := hostname + "-wildcard-dns"
@@ -223,13 +264,14 @@ func awsCoderVM(ctx *pulumi.Context) (*ec2.Instance, error) {
 		Name:    pulumi.String("*." + hostname + "." + zoneName),
 		ZoneId:  pulumi.String(zoneID),
 		Type:    pulumi.String("A"),
-		Records: pulumi.StringArray{inst.PublicIp},
+		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return inst, nil
+	ctx.Export(hostname+"-publicIP", eip.PublicIp)
+	return nil
 }
 
 func awsDNSZone(ctx *pulumi.Context) (id string, name string, err error) {
@@ -283,3 +325,28 @@ func awsDNSZone(ctx *pulumi.Context) (id string, name string, err error) {
 // 	}
 // 	return pulumi.String(string(doc))
 // }
+
+func ignition() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	bu, err := os.ReadFile(filepath.Join(wd, "coder", "butane.yml"))
+	if err != nil {
+		return "", err
+	}
+	opts := common.TranslateBytesOptions{
+		TranslateOptions: common.TranslateOptions{
+			FilesDir: filepath.Join(wd, "coder"),
+		},
+	}
+	ign, report, err := butaneConfig.TranslateBytes(bu, opts)
+	if report.IsFatal() {
+		err := &multierror.Error{}
+		for _, e := range report.Entries {
+			err = multierror.Append(err, fmt.Errorf("%s: %s", e.Kind, e.Message))
+		}
+		return "", err
+	}
+	return string(ign), nil
+}

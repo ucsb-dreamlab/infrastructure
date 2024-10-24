@@ -1,0 +1,28 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: true
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: :443
+certificatesResolvers:
+  route53:
+    acme:
+      email: serickson@ucsb.edu
+      storage: /etc/traefik/acme.json
+      dnsChallenge:
+        provider: route53
+
+api:
+  dashboard: false
+
+providers:
+  docker:
+    exposedByDefault: false

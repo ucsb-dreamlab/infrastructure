@@ -1,0 +1,22 @@
+variant: fcos
+version: 1.4.0
+systemd:
+  units:
+    - name: podman.socket
+      enabled: true
+storage:
+  filesystems:
+    - device: /dev/nvme1n1
+      path: /var/lib/containers/storage/volumes
+      format: xfs
+      with_mount_unit: true
+  trees:
+    - local: etc
+      path: /etc
+  files:
+    - path: /etc/traefik/acme.json
+      user:
+        name: root
+      group:
+        name: root
+      mode: 0600

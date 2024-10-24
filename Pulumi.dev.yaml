@@ -1,2 +1,6 @@
 config:
   aws:region: us-west-2
+  dreamlab:googleOAuth2ClientID:
+    secure: AAABADv9t0YW9SXrd3RlAuvBW9k5alI8BfKwSHyTFFEkZ+I0xcK/9izLtwEBn5QxEYA2TBio9i+CO/LsdDzcrW3iFE93cOHsy1jxYV+grVVVzJ7gd7lRxZfB7/lOGTaRCzuGwaPeiho=
+  dreamlab:googleOAuth2ClientSecret:
+    secure: AAABAN/8nb26KZeUz2ZKGUDtzDQP4qnohCkwFFax7KG1rPPySJ+YAdQws8DPeezTCaspNcE6IuT5ADR7G+Ct4wFChg==

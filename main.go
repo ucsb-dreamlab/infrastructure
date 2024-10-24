@@ -13,13 +13,12 @@ func main() {
 		}
 
 		// // create an coder instance
-		inst, err := awsCoderVM(ctx)
-		if err != nil {
+		if err := awsCoderVM(ctx); err != nil {
 			return err
 		}
 
 		// ctx.Export("vpc-id", vpc.VpcId)
-		ctx.Export("coder-ip", inst.PublicIp)
+		// ctx.Export("coder-ip", inst.PublicIp)
 		return nil
 	})
 }
