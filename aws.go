@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"text/template"
 
+	butaneConfig "github.com/coreos/butane/config"
 	"github.com/coreos/butane/config/common"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/ebs"
@@ -14,8 +17,6 @@ import (
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/route53"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
-
-	butaneConfig "github.com/coreos/butane/config"
 )
 
 const (
@@ -100,7 +101,7 @@ func awsVPC(ctx *pulumi.Context) error {
 func awsCoderVM(ctx *pulumi.Context) error {
 	conf := config.New(ctx, "")
 	var (
-		hostname     = `coder`
+		hostname     = `coder-test`
 		ami          = conf.Get("coder_instance_ami")
 		instanceType = conf.Get("coder_instance_type")
 	)
@@ -173,7 +174,7 @@ func awsCoderVM(ctx *pulumi.Context) error {
 		return err
 	}
 
-	userData, err := ignition()
+	userData, err := ignition(ctx)
 	if err != nil {
 		return err
 	}
@@ -221,7 +222,7 @@ func awsCoderVM(ctx *pulumi.Context) error {
 			HttpPutResponseHopLimit: pulumi.Int(2),
 			HttpTokens:              pulumi.String("required"),
 		},
-		UserData:                pulumi.String(userData),
+		UserData:                userData,
 		UserDataReplaceOnChange: pulumi.Bool(true),
 	}
 	inst, err := ec2.NewInstance(ctx, hostname, instanceArgs, pulumi.DeleteBeforeReplace(true))
@@ -326,27 +327,52 @@ func awsDNSZone(ctx *pulumi.Context) (id string, name string, err error) {
 // 	return pulumi.String(string(doc))
 // }
 
-func ignition() (string, error) {
+func ignition(ctx *pulumi.Context) (pulumi.StringOutput, error) {
+	var out pulumi.StringOutput
 	wd, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return out, err
 	}
-	bu, err := os.ReadFile(filepath.Join(wd, "coder", "butane.yml"))
+	raw, err := os.ReadFile(filepath.Join(wd, "coder", "butane.yml"))
 	if err != nil {
-		return "", err
+		return out, err
 	}
-	opts := common.TranslateBytesOptions{
-		TranslateOptions: common.TranslateOptions{
-			FilesDir: filepath.Join(wd, "coder"),
-		},
-	}
-	ign, report, err := butaneConfig.TranslateBytes(bu, opts)
-	if report.IsFatal() {
-		err := &multierror.Error{}
-		for _, e := range report.Entries {
-			err = multierror.Append(err, fmt.Errorf("%s: %s", e.Kind, e.Message))
+	cfg := config.New(ctx, "")
+
+	out = pulumi.All(
+		cfg.GetSecret("googleOAuth2ClientID"),
+		cfg.GetSecret("googleOAuth2ClientSecret"),
+	).ApplyT(func(args []interface{}) (string, error) {
+		vals := struct {
+			OIDCClientID     string
+			OIDCClientSecret string
+		}{
+			OIDCClientID:     args[0].(string),
+			OIDCClientSecret: args[1].(string),
 		}
-		return "", err
-	}
-	return string(ign), nil
+		tpl, err := template.New("butane").Parse(string(raw))
+		if err != nil {
+			return "", err
+		}
+		builder := &strings.Builder{}
+		if err := tpl.Execute(builder, vals); err != nil {
+			return "", err
+		}
+
+		opts := common.TranslateBytesOptions{
+			TranslateOptions: common.TranslateOptions{
+				FilesDir: filepath.Join(wd, "coder"),
+			},
+		}
+		ign, report, err := butaneConfig.TranslateBytes([]byte(builder.String()), opts)
+		if report.IsFatal() {
+			err := &multierror.Error{}
+			for _, e := range report.Entries {
+				err = multierror.Append(err, fmt.Errorf("%s: %s", e.Kind, e.Message))
+			}
+			return "", err
+		}
+		return string(ign), nil
+	}).(pulumi.StringOutput)
+	return out, nil
 }

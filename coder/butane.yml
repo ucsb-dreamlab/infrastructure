@@ -14,9 +14,45 @@ storage:
     - local: etc
       path: /etc
   files:
-    - path: /etc/traefik/acme.json
-      user:
-        name: root
-      group:
-        name: root
-      mode: 0600
+    - path: /etc/containers/systemd/coder.container
+      contents:
+        inline: |
+          [Unit]
+          Description=Coder Container
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          ContainerName=coder
+          Image=ghcr.io/coder/coder:latest
+          PublishPort=3000
+          Volume=coder-home:/home
+          EnvironmentFile=/etc/coder/coder.env
+          Label=traefik.enable="true"
+          Label=traefik.http.routers.coder-secure.entrypoints="websecure"
+          Label=traefik.http.routers.coder-secure.rule='HostRegexp(`^(.+\\.)?coder-test\\.dreamlab\\.ucsb\\.edu$`)'
+          Label=traefik.http.routers.coder-secure.tls="true"
+          Label=traefik.http.routers.coder-secure.tls.certresolver="dnsresolver"
+          Label=traefik.http.routers.coder-secure.tls.domains[0].main="coder-test.dreamlab.ucsb.edu"
+          Label=traefik.http.routers.coder-secure.tls.domains[1].main="*.coder-test.dreamlab.ucsb.edu"
+          
+          [Install]
+          WantedBy=multi-user.target
+    
+    - path: /etc/coder/coder.env
+      contents:
+        inline: |
+          CODER_HTTP_ADDRESS=0.0.0.0:3000
+          CODER_ACCESS_URL=https://coder-test.dreamlab.ucsb.edu
+          CODER_WILDCARD_ACCESS_URL=*.coder-test.dreamlab.ucsb.edu
+          CODER_OIDC_ISSUER_URL=https://accounts.google.com
+          CODER_OIDC_EMAIL_DOMAIN=ucsb.edu
+          CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
+          CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
+          CODER_OIDC_ALLOW_SIGNUPS=false
+    
+    - path: /etc/containers/systemd/coder-home.volume
+      contents:
+        inline: |
+          [Volume]
+          VolumeName=coder-home

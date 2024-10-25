@@ -1,7 +1,8 @@
 global:
   checkNewVersion: true
   sendAnonymousUsage: true
-
+log:
+  level: INFO
 entryPoints:
   web:
     address: :80
@@ -13,16 +14,14 @@ entryPoints:
   websecure:
     address: :443
 certificatesResolvers:
-  route53:
+  dnsresolver:
     acme:
       email: serickson@ucsb.edu
-      storage: /etc/traefik/acme.json
+      storage: /etc/traefik/acme/acme.json
       dnsChallenge:
         provider: route53
-
 api:
   dashboard: false
-
 providers:
   docker:
     exposedByDefault: false
