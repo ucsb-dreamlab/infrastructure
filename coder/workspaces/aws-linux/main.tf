@@ -58,7 +58,7 @@ locals {
 
 data "aws_subnets" "private" {
   tags = {
-    Coder_Workspaces = "true"
+    "dreamlab:service:coder" = "workers"
   }
 }
 

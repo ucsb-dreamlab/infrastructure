@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dreamlab/internal/dreamlab"
 	_ "embed"
 	"fmt"
 	"os"
@@ -20,21 +21,6 @@ import (
 )
 
 const (
-	dreamlab = "dreamlab"
-
-	vpc     = "dreamlab_vpc"
-	vpcCidr = "10.226.42.192/26"
-
-	pubAZ      = "us-west-2a"
-	pubSubnet  = "public_subnet"
-	pubCidr    = "10.226.42.192/27"
-	pubTagName = "dreamlab Public Subnet 1"
-
-	privSubnet  = "private_subnet"
-	privCidr    = "10.226.42.224/27"
-	privAZ      = "us-west-2a"
-	privTagName = "dreamlab Private Subnet 1"
-
 	policyEC2AssumeRole = `{
 		"Version": "2012-10-17",
 		"Statement": [{
@@ -47,84 +33,17 @@ const (
 //go:embed coder/policy.json
 var awsPolicyCoder string
 
-func awsVPC(ctx *pulumi.Context) error {
-
-	// imported vpc
-	vpc, err := ec2.NewVpc(ctx, vpc, &ec2.VpcArgs{
-		CidrBlock:          pulumi.String(vpcCidr),
-		EnableDnsHostnames: pulumi.Bool(true),
-		InstanceTenancy:    pulumi.String("default"),
-		Tags: pulumi.StringMap{
-			"Name":            pulumi.String(dreamlab),
-			"tgw-auto-attach": pulumi.String("true"),
-			"ucsb:service":    pulumi.String("UCSB Campus Cloud Portfolio"),
-		},
-	}, pulumi.Protect(true))
-	if err != nil {
-		return err
-	}
-
-	_, err = ec2.NewSubnet(ctx, pubSubnet, &ec2.SubnetArgs{
-		AvailabilityZone:               pulumi.String(pubAZ),
-		CidrBlock:                      pulumi.String(pubCidr),
-		MapPublicIpOnLaunch:            pulumi.Bool(true),
-		PrivateDnsHostnameTypeOnLaunch: pulumi.String("ip-name"),
-		Tags: pulumi.StringMap{
-			"Name":         pulumi.String(pubTagName),
-			"Network":      pulumi.String("Public"),
-			"ucsb:service": pulumi.String("UCSB Campus Cloud Portfolio"),
-		},
-		VpcId: vpc.ID(),
-	}, pulumi.Protect(true))
-	if err != nil {
-		return err
-	}
-
-	_, err = ec2.NewSubnet(ctx, privSubnet, &ec2.SubnetArgs{
-		AvailabilityZone:               pulumi.String(privAZ),
-		CidrBlock:                      pulumi.String(privCidr),
-		PrivateDnsHostnameTypeOnLaunch: pulumi.String("ip-name"),
-		Tags: pulumi.StringMap{
-			"Name":                   pulumi.String(privTagName),
-			"Network":                pulumi.String("Private"),
-			"ucsb:service":           pulumi.String("UCSB Campus Cloud Portfolio"),
-			"dreamlab:service:coder": pulumi.String("workers"),
-		},
-		VpcId: vpc.ID(),
-	}, pulumi.Protect(true))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func awsCoderVM(ctx *pulumi.Context) error {
+func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 	conf := config.New(ctx, "")
 	var (
 		hostname     = `coder-test`
 		ami          = conf.Get("coder_instance_ami")
 		instanceType = conf.Get("coder_instance_type")
 	)
-	zoneID, zoneName, err := awsDNSZone(ctx)
-	if err != nil {
-		return err
-	}
-	pubSubnet, err := ec2.LookupSubnet(ctx, &ec2.LookupSubnetArgs{
-		Tags: map[string]string{"Name": pubTagName},
-	})
-	if err != nil {
-		return err
-	}
-	vpc, err := ec2.LookupVpc(ctx, &ec2.LookupVpcArgs{
-		Tags: map[string]string{"Name": dreamlab},
-	})
-	if err != nil {
-		return err
-	}
 	sgName := hostname + "-sg"
 	sg, err := ec2.NewSecurityGroup(ctx, sgName, &ec2.SecurityGroupArgs{
 		Name:  pulumi.String(sgName),
-		VpcId: pulumi.String(vpc.Id),
+		VpcId: vpc.Vpc.ID(),
 		Ingress: &ec2.SecurityGroupIngressArray{
 			&ec2.SecurityGroupIngressArgs{
 				FromPort:       pulumi.Int(22),
@@ -207,13 +126,13 @@ func awsCoderVM(ctx *pulumi.Context) error {
 	}
 	varVolName := hostname + "-var"
 	varVol, err := ebs.NewVolume(ctx, varVolName, &ebs.VolumeArgs{
-		AvailabilityZone: pulumi.String(pubSubnet.AvailabilityZone),
+		AvailabilityZone: vpc.Public.AvailabilityZone,
 		Size:             pulumi.IntPtr(64),
 		Type:             pulumi.StringPtr("gp3"),
 	})
 	instanceArgs := &ec2.InstanceArgs{
 		IamInstanceProfile:  profile.Name,
-		SubnetId:            pulumi.String(pubSubnet.Id),
+		SubnetId:            vpc.Public.ID(),
 		Ami:                 pulumi.String(ami),
 		InstanceType:        pulumi.String(instanceType),
 		KeyName:             kp.KeyName,
@@ -250,8 +169,8 @@ func awsCoderVM(ctx *pulumi.Context) error {
 
 	recordName := hostname + "-dns"
 	_, err = route53.NewRecord(ctx, recordName, &route53.RecordArgs{
-		Name:    pulumi.String(hostname + "." + zoneName),
-		ZoneId:  pulumi.String(zoneID),
+		Name:    pulumi.String(hostname + "." + dreamlab.ZONE),
+		ZoneId:  vpc.DNS.ZoneId,
 		Type:    pulumi.String("A"),
 		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
@@ -262,8 +181,8 @@ func awsCoderVM(ctx *pulumi.Context) error {
 
 	wildcardRecordName := hostname + "-wildcard-dns"
 	_, err = route53.NewRecord(ctx, wildcardRecordName, &route53.RecordArgs{
-		Name:    pulumi.String("*." + hostname + "." + zoneName),
-		ZoneId:  pulumi.String(zoneID),
+		Name:    pulumi.String("*." + hostname + "." + dreamlab.ZONE),
+		ZoneId:  vpc.DNS.ZoneId,
 		Type:    pulumi.String("A"),
 		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
@@ -273,22 +192,6 @@ func awsCoderVM(ctx *pulumi.Context) error {
 	}
 	ctx.Export(hostname+"-publicIP", eip.PublicIp)
 	return nil
-}
-
-func awsDNSZone(ctx *pulumi.Context) (id string, name string, err error) {
-	conf := config.New(ctx, "")
-	zone := conf.Get("dns_zone")
-	if zone == "" {
-		err = fmt.Errorf("missing dns_zone config")
-		return
-	}
-	lookup, err := route53.LookupZone(ctx, &route53.LookupZoneArgs{Name: &zone})
-	if err != nil {
-		return
-	}
-	id = lookup.Id
-	name = lookup.Name
-	return
 }
 
 // func bucketPolicyDocument(bucket string) pulumi.String {
