@@ -1,21 +1,20 @@
-package main
+package dreamlab
 
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	_ "embed"
 	"encoding/pem"
 	"os"
 	"path/filepath"
 
-	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"golang.org/x/crypto/ssh"
 )
 
 const keyDir = "keys"
 
-func getSSHKey(ctx *pulumi.Context, name string) (string, error) {
-	keyDir := filepath.Join(keyDir, ctx.Stack())
+// Get an existing key data or create a new key and return it.
+// The returned string is an ed25519 public key
+func GetCreateSSHKey(keyDir, name string) (string, error) {
 	keyPath := filepath.Join(keyDir, name)
 	// try existing key with the name
 	pubBytes, err := os.ReadFile(keyPath + ".pub")

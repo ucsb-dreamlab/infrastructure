@@ -5,16 +5,14 @@
       "Sid": "CoderRoute53",
       "Effect": "Allow",
       "Action": [
-        "route53:ListHostedZones",
-        "route53:GetChange"
+        "route53:GetChange",
+        "route53:ChangeResourceRecordSets",
+        "route53:ListResourceRecordSets"
       ],
-      "Resource": ["*"]
-    },
-    {
-      "Sid": "CoderRoute53Records",
-      "Effect": "Allow",
-      "Action": ["route53:ChangeResourceRecordSets"],
-      "Resource": "arn:aws:route53:::hostedzone/*"
+      "Resource": [
+        "arn:aws:route53:::hostedzone/*",
+        "arn:aws:route53:::change/*"
+      ]
     },
     {
       "Sid": "CoderEC2",
@@ -32,7 +30,8 @@
         "ec2:DescribeInstanceCreditSpecifications",
         "ec2:DescribeImages",
         "ec2:ModifyDefaultCreditSpecification",
-        "ec2:DescribeVolumes"
+        "ec2:DescribeVolumes",
+        "route53:ListHostedZonesByName"
       ],
       "Resource": "*"
     },

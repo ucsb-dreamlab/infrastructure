@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Install Docker
+if ! command -v docker &> /dev/null; then
+    echo "Docker not found, installing..."
+    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
+    usermod -aG docker ${linux_user}
+    newgrp docker
+else
+    echo "Docker is already installed."
+fi
+
+sudo -u '${linux_user}' sh -c '${init_script}'

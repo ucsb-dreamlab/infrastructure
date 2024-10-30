@@ -1,5 +1,0 @@
-dbs:
-  - path: /tmp/chaparral.sqlite3
-    replicas:
-      - url: ${LITESTREAM_REPLICA_URL}
-        region: us-west-2

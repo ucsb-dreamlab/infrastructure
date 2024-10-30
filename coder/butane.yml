@@ -1,0 +1,58 @@
+variant: fcos
+version: 1.4.0
+systemd:
+  units:
+    - name: podman.socket
+      enabled: true
+storage:
+  filesystems:
+    - device: /dev/nvme1n1
+      path: /var/lib/containers/storage/volumes
+      format: xfs
+      with_mount_unit: true
+  trees:
+    - local: etc
+      path: /etc
+  files:
+    - path: /etc/containers/systemd/coder.container
+      contents:
+        inline: |
+          [Unit]
+          Description=Coder Container
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          ContainerName=coder
+          Image=ghcr.io/coder/coder:latest
+          PublishPort=3000
+          Volume=coder-home:/home
+          EnvironmentFile=/etc/coder/coder.env
+          Label=traefik.enable="true"
+          Label=traefik.http.routers.coder-secure.entrypoints="websecure"
+          Label=traefik.http.routers.coder-secure.rule='HostRegexp(`^(.+\\.)?{{ .Hostname }}\\.{{ domainEscape .Domain }}$`)'
+          Label=traefik.http.routers.coder-secure.tls="true"
+          Label=traefik.http.routers.coder-secure.tls.certresolver="dnsresolver"
+          Label=traefik.http.routers.coder-secure.tls.domains[0].main="{{ .Hostname }}.{{ .Domain }}"
+          Label=traefik.http.routers.coder-secure.tls.domains[1].main="*.{{ .Hostname }}.{{ .Domain }}"
+          
+          [Install]
+          WantedBy=multi-user.target
+    
+    - path: /etc/coder/coder.env
+      contents:
+        inline: |
+          CODER_HTTP_ADDRESS=0.0.0.0:3000
+          CODER_ACCESS_URL=https://{{ .Hostname }}.{{ .Domain }}
+          CODER_WILDCARD_ACCESS_URL=*.{{ .Hostname }}.{{ .Domain }}
+          CODER_OIDC_ISSUER_URL=https://accounts.google.com
+          CODER_OIDC_EMAIL_DOMAIN=ucsb.edu
+          CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
+          CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
+          CODER_OIDC_ALLOW_SIGNUPS=false
+    
+    - path: /etc/containers/systemd/coder-home.volume
+      contents:
+        inline: |
+          [Volume]
+          VolumeName=coder-home
