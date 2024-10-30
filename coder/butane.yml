@@ -30,11 +30,11 @@ storage:
           EnvironmentFile=/etc/coder/coder.env
           Label=traefik.enable="true"
           Label=traefik.http.routers.coder-secure.entrypoints="websecure"
-          Label=traefik.http.routers.coder-secure.rule='HostRegexp(`^(.+\\.)?coder-test\\.dreamlab\\.ucsb\\.edu$`)'
+          Label=traefik.http.routers.coder-secure.rule='HostRegexp(`^(.+\\.)?{{ .Hostname }}\\.{{ domainEscape .Domain }}$`)'
           Label=traefik.http.routers.coder-secure.tls="true"
           Label=traefik.http.routers.coder-secure.tls.certresolver="dnsresolver"
-          Label=traefik.http.routers.coder-secure.tls.domains[0].main="coder-test.dreamlab.ucsb.edu"
-          Label=traefik.http.routers.coder-secure.tls.domains[1].main="*.coder-test.dreamlab.ucsb.edu"
+          Label=traefik.http.routers.coder-secure.tls.domains[0].main="{{ .Hostname }}.{{ .Domain }}"
+          Label=traefik.http.routers.coder-secure.tls.domains[1].main="*.{{ .Hostname }}.{{ .Domain }}"
           
           [Install]
           WantedBy=multi-user.target
@@ -43,8 +43,8 @@ storage:
       contents:
         inline: |
           CODER_HTTP_ADDRESS=0.0.0.0:3000
-          CODER_ACCESS_URL=https://coder-test.dreamlab.ucsb.edu
-          CODER_WILDCARD_ACCESS_URL=*.coder-test.dreamlab.ucsb.edu
+          CODER_ACCESS_URL=https://{{ .Hostname }}.{{ .Domain }}
+          CODER_WILDCARD_ACCESS_URL=*.{{ .Hostname }}.{{ .Domain }}
           CODER_OIDC_ISSUER_URL=https://accounts.google.com
           CODER_OIDC_EMAIL_DOMAIN=ucsb.edu
           CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}

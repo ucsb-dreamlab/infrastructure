@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	ZONE = "dreamlab.ucsb.edu"
+	domain = "dreamlab.ucsb.edu"
 
 	dreamlab = "dreamlab"
 
@@ -25,14 +25,18 @@ const (
 	privSubnetTagName  = "dreamlab Private Subnet 1"
 )
 
-type AWS struct {
+type AWSVPC struct {
 	Vpc     *ec2.Vpc
 	Private *ec2.Subnet
 	Public  *ec2.Subnet
-	DNS     *route53.Zone
 }
 
-func NewAWS(ctx *pulumi.Context) (*AWS, error) {
+type DNS struct {
+	domain string
+	*route53.Zone
+}
+
+func NewAWSVPC(ctx *pulumi.Context) (*AWSVPC, error) {
 	// The VPC and Subnets were created using the ""
 	vpc, err := ec2.NewVpc(ctx, vpcResource, &ec2.VpcArgs{
 		CidrBlock:          pulumi.String(vpcCidr),
@@ -77,9 +81,17 @@ func NewAWS(ctx *pulumi.Context) (*AWS, error) {
 	if err != nil {
 		return nil, err
 	}
+	return &AWSVPC{
+		Vpc:     vpc,
+		Public:  pub,
+		Private: priv,
+	}, nil
+}
+
+func NewDNSZone(ctx *pulumi.Context) (*DNS, error) {
 	zone, err := route53.NewZone(ctx, "dreamlab_dns", &route53.ZoneArgs{
 		Comment: pulumi.String(""),
-		Name:    pulumi.String(ZONE),
+		Name:    pulumi.String(domain),
 		Tags: pulumi.StringMap{
 			"Coder_Managed": pulumi.String("true"),
 		},
@@ -87,10 +99,9 @@ func NewAWS(ctx *pulumi.Context) (*AWS, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &AWS{
-		Vpc:     vpc,
-		Public:  pub,
-		Private: priv,
-		DNS:     zone,
-	}, nil
+	return &DNS{Zone: zone, domain: domain}, nil
+}
+
+func (d DNS) Domain() string {
+	return d.domain
 }

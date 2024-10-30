@@ -1,10 +1,9 @@
-package main
+package coder
 
 import (
 	"dreamlab/internal/dreamlab"
 	_ "embed"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -20,30 +19,34 @@ import (
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
 
-const (
-	policyEC2AssumeRole = `{
-		"Version": "2012-10-17",
-		"Statement": [{
-			"Effect": "Allow",
-			  "Action": "sts:AssumeRole",
-		   "Principal": {"Service": "ec2.amazonaws.com"}
-		}]}`
-)
+const policyEC2AssumeRole = `{
+	"Version": "2012-10-17",
+	"Statement": [{
+		"Effect": "Allow",
+		"Action": "sts:AssumeRole",
+		"Principal": {"Service": "ec2.amazonaws.com"}
+	}]
+}`
 
-//go:embed coder/policy.json
+//go:embed policy.json
 var awsPolicyCoder string
 
-func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
-	conf := config.New(ctx, "")
-	var (
-		hostname     = `coder-test`
-		ami          = conf.Get("coder_instance_ami")
-		instanceType = conf.Get("coder_instance_type")
-	)
-	sgName := hostname + "-sg"
-	sg, err := ec2.NewSecurityGroup(ctx, sgName, &ec2.SecurityGroupArgs{
-		Name:  pulumi.String(sgName),
-		VpcId: vpc.Vpc.ID(),
+//go:embed butane.yml
+var butaneYML string
+
+type Config struct {
+	VPC          *dreamlab.AWSVPC
+	DNS          *dreamlab.DNS
+	Hostname     string
+	InstanceAMI  string // should be fedora coreos
+	InstanceType string // shoube be arm64
+}
+
+func New(ctx *pulumi.Context, resource string, coderConfig *Config) error {
+	sgResource := resource + "-sg"
+	sg, err := ec2.NewSecurityGroup(ctx, sgResource, &ec2.SecurityGroupArgs{
+		Name:  pulumi.String(sgResource),
+		VpcId: coderConfig.VPC.Vpc.ID(),
 		Ingress: &ec2.SecurityGroupIngressArray{
 			&ec2.SecurityGroupIngressArgs{
 				FromPort:       pulumi.Int(22),
@@ -79,62 +82,58 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 	if err != nil {
 		return err
 	}
-
-	pubKey, err := getSSHKey(ctx, hostname)
+	pubKey, err := dreamlab.GetCreateSSHKey(filepath.Join("keys", ctx.Stack()), coderConfig.Hostname)
 	if err != nil {
-		return fmt.Errorf("ssh key for %q: %w", hostname, err)
+		return fmt.Errorf("ssh key for %q: %w", coderConfig.Hostname, err)
 	}
-	keypairName := hostname + "-vm-keypair"
-	kp, err := ec2.NewKeyPair(ctx, keypairName, &ec2.KeyPairArgs{
-		KeyName:   pulumi.String(keypairName),
+	keypairResource := resource + "-vm-keypair"
+	kp, err := ec2.NewKeyPair(ctx, keypairResource, &ec2.KeyPairArgs{
+		KeyName:   pulumi.String(keypairResource),
 		PublicKey: pulumi.String(pubKey),
 	})
 	if err != nil {
 		return err
 	}
-
-	userData, err := ignition(ctx)
-	if err != nil {
-		return err
-	}
-
-	roleName := hostname + "-vm-role"
-	role, err := iam.NewRole(ctx, roleName, &iam.RoleArgs{
-		Name:             pulumi.String(roleName),
+	// create an instance profile for the vm
+	roleResource := resource + "-role"
+	role, err := iam.NewRole(ctx, roleResource, &iam.RoleArgs{
+		Name:             pulumi.String(roleResource),
 		AssumeRolePolicy: pulumi.String(policyEC2AssumeRole),
 	})
 	if err != nil {
 		return err
 	}
-	rolePolicyName := roleName + "-policy"
-	_, err = iam.NewRolePolicy(ctx, rolePolicyName, &iam.RolePolicyArgs{
-		Name:   pulumi.String(rolePolicyName),
+	policyResource := roleResource + "-policy"
+	_, err = iam.NewRolePolicy(ctx, policyResource, &iam.RolePolicyArgs{
 		Role:   role.Name,
 		Policy: pulumi.String(awsPolicyCoder),
 	})
 	if err != nil {
 		return err
 	}
-
-	profileName := hostname + "-vm-profile"
-	profile, err := iam.NewInstanceProfile(ctx, profileName, &iam.InstanceProfileArgs{
-		Name: pulumi.String(profileName),
+	profileResource := resource + "-profile"
+	profile, err := iam.NewInstanceProfile(ctx, profileResource, &iam.InstanceProfileArgs{
 		Role: role.Name,
 	})
 	if err != nil {
 		return err
 	}
-	varVolName := hostname + "-var"
-	varVol, err := ebs.NewVolume(ctx, varVolName, &ebs.VolumeArgs{
-		AvailabilityZone: vpc.Public.AvailabilityZone,
+	// persistent storage
+	varVolRescource := resource + "-var"
+	varVol, err := ebs.NewVolume(ctx, varVolRescource, &ebs.VolumeArgs{
+		AvailabilityZone: coderConfig.VPC.Public.AvailabilityZone,
 		Size:             pulumi.IntPtr(64),
 		Type:             pulumi.StringPtr("gp3"),
 	})
+	userData, err := ignition(ctx, coderConfig)
+	if err != nil {
+		return err
+	}
 	instanceArgs := &ec2.InstanceArgs{
 		IamInstanceProfile:  profile.Name,
-		SubnetId:            vpc.Public.ID(),
-		Ami:                 pulumi.String(ami),
-		InstanceType:        pulumi.String(instanceType),
+		SubnetId:            coderConfig.VPC.Public.ID(),
+		Ami:                 pulumi.String(coderConfig.InstanceAMI),
+		InstanceType:        pulumi.String(coderConfig.InstanceType),
 		KeyName:             kp.KeyName,
 		VpcSecurityGroupIds: pulumi.StringArray{sg.ID()},
 		MetadataOptions: ec2.InstanceMetadataOptionsArgs{
@@ -144,12 +143,12 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 		UserData:                userData,
 		UserDataReplaceOnChange: pulumi.Bool(true),
 	}
-	inst, err := ec2.NewInstance(ctx, hostname, instanceArgs, pulumi.DeleteBeforeReplace(true))
+	inst, err := ec2.NewInstance(ctx, resource, instanceArgs, pulumi.DeleteBeforeReplace(true))
 	if err != nil {
 		return err
 	}
 	// Attach the volume to the existing EC2 instance.
-	_, err = ec2.NewVolumeAttachment(ctx, varVolName+"-attach", &ec2.VolumeAttachmentArgs{
+	_, err = ec2.NewVolumeAttachment(ctx, varVolRescource+"-attach", &ec2.VolumeAttachmentArgs{
 		InstanceId:                  inst.ID(),
 		VolumeId:                    varVol.ID(),
 		DeviceName:                  pulumi.String("/dev/sdf"),
@@ -158,19 +157,18 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 	if err != nil {
 		return err
 	}
-	eiPName := hostname + "-eip"
-	eip, err := ec2.NewEip(ctx, eiPName, &ec2.EipArgs{
+	eiPResource := resource + "-eip"
+	eip, err := ec2.NewEip(ctx, eiPResource, &ec2.EipArgs{
 		Domain:   pulumi.String("vpc"),
 		Instance: inst.ID(),
 	})
 	if err != nil {
 		return err
 	}
-
-	recordName := hostname + "-dns"
-	_, err = route53.NewRecord(ctx, recordName, &route53.RecordArgs{
-		Name:    pulumi.String(hostname + "." + dreamlab.ZONE),
-		ZoneId:  vpc.DNS.ZoneId,
+	recordResource := resource + "-dns"
+	_, err = route53.NewRecord(ctx, recordResource, &route53.RecordArgs{
+		Name:    pulumi.String(coderConfig.Hostname + "." + coderConfig.DNS.Domain()),
+		ZoneId:  coderConfig.DNS.ZoneId,
 		Type:    pulumi.String("A"),
 		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
@@ -179,10 +177,10 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 		return err
 	}
 
-	wildcardRecordName := hostname + "-wildcard-dns"
-	_, err = route53.NewRecord(ctx, wildcardRecordName, &route53.RecordArgs{
-		Name:    pulumi.String("*." + hostname + "." + dreamlab.ZONE),
-		ZoneId:  vpc.DNS.ZoneId,
+	wildcardRecordResource := resource + "-wildcard-dns"
+	_, err = route53.NewRecord(ctx, wildcardRecordResource, &route53.RecordArgs{
+		Name:    pulumi.String("*." + coderConfig.Hostname + "." + coderConfig.DNS.Domain()),
+		ZoneId:  coderConfig.DNS.ZoneId,
 		Type:    pulumi.String("A"),
 		Records: pulumi.StringArray{eip.PublicIp},
 		Ttl:     pulumi.Int(600),
@@ -190,8 +188,58 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 	if err != nil {
 		return err
 	}
-	ctx.Export(hostname+"-publicIP", eip.PublicIp)
+	ctx.Export(coderConfig.Hostname+"-publicIP", eip.PublicIp)
 	return nil
+}
+
+// build fedora coreos ignition user data for the machine.
+func ignition(ctx *pulumi.Context, coderConfig *Config) (pulumi.StringOutput, error) {
+	var out pulumi.StringOutput
+	cfg := config.New(ctx, "")
+	out = pulumi.All(
+		cfg.GetSecret("googleOAuth2ClientID"),
+		cfg.GetSecret("googleOAuth2ClientSecret"),
+	).ApplyT(func(args []interface{}) (string, error) {
+		vals := struct {
+			OIDCClientID     string
+			OIDCClientSecret string
+			Hostname         string
+			Domain           string
+		}{
+			OIDCClientID:     args[0].(string),
+			OIDCClientSecret: args[1].(string),
+			Hostname:         coderConfig.Hostname,
+			Domain:           coderConfig.DNS.Domain(),
+		}
+		myFuncs := template.FuncMap{
+			"domainEscape": func(d string) string {
+				return strings.ReplaceAll(d, `.`, `\\.`)
+			},
+		}
+		tpl, err := template.New("butane").Funcs(myFuncs).Parse(string(butaneYML))
+		if err != nil {
+			return "", err
+		}
+		builder := &strings.Builder{}
+		if err := tpl.Execute(builder, vals); err != nil {
+			return "", err
+		}
+		opts := common.TranslateBytesOptions{
+			TranslateOptions: common.TranslateOptions{
+				FilesDir: "coder",
+			},
+		}
+		ign, report, err := butaneConfig.TranslateBytes([]byte(builder.String()), opts)
+		if report.IsFatal() {
+			err := &multierror.Error{}
+			for _, e := range report.Entries {
+				err = multierror.Append(err, fmt.Errorf("%s: %s", e.Kind, e.Message))
+			}
+			return "", err
+		}
+		return string(ign), nil
+	}).(pulumi.StringOutput)
+	return out, nil
 }
 
 // func bucketPolicyDocument(bucket string) pulumi.String {
@@ -229,53 +277,3 @@ func awsCoderVM(ctx *pulumi.Context, vpc *dreamlab.AWS) error {
 // 	}
 // 	return pulumi.String(string(doc))
 // }
-
-func ignition(ctx *pulumi.Context) (pulumi.StringOutput, error) {
-	var out pulumi.StringOutput
-	wd, err := os.Getwd()
-	if err != nil {
-		return out, err
-	}
-	raw, err := os.ReadFile(filepath.Join(wd, "coder", "butane.yml"))
-	if err != nil {
-		return out, err
-	}
-	cfg := config.New(ctx, "")
-
-	out = pulumi.All(
-		cfg.GetSecret("googleOAuth2ClientID"),
-		cfg.GetSecret("googleOAuth2ClientSecret"),
-	).ApplyT(func(args []interface{}) (string, error) {
-		vals := struct {
-			OIDCClientID     string
-			OIDCClientSecret string
-		}{
-			OIDCClientID:     args[0].(string),
-			OIDCClientSecret: args[1].(string),
-		}
-		tpl, err := template.New("butane").Parse(string(raw))
-		if err != nil {
-			return "", err
-		}
-		builder := &strings.Builder{}
-		if err := tpl.Execute(builder, vals); err != nil {
-			return "", err
-		}
-
-		opts := common.TranslateBytesOptions{
-			TranslateOptions: common.TranslateOptions{
-				FilesDir: filepath.Join(wd, "coder"),
-			},
-		}
-		ign, report, err := butaneConfig.TranslateBytes([]byte(builder.String()), opts)
-		if report.IsFatal() {
-			err := &multierror.Error{}
-			for _, e := range report.Entries {
-				err = multierror.Append(err, fmt.Errorf("%s: %s", e.Kind, e.Message))
-			}
-			return "", err
-		}
-		return string(ign), nil
-	}).(pulumi.StringOutput)
-	return out, nil
-}
