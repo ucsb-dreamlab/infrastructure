@@ -10,50 +10,13 @@ terraform {
 }
 
 locals {
+  hostname   = lower(data.coder_workspace.dev.name)
   aws_region = "us-west-2"
   linux_user = "coder"
-  user_data  = <<-EOT
-  Content-Type: multipart/mixed; boundary="//"
-  MIME-Version: 1.0
+}
 
-  --//
-  Content-Type: text/cloud-config; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="cloud-config.txt"
-
-  #cloud-config
-  cloud_final_modules:
-  - [scripts-user, always]
-  hostname: ${lower(data.coder_workspace.me.name)}
-  users:
-  - name: ${local.linux_user}
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-
-  --//
-  Content-Type: text/x-shellscript; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="userdata.txt"
-
-  #!/bin/bash
-  
-  # Install Docker
-  if ! command -v docker &> /dev/null
-  then
-    echo "Docker not found, installing..."
-    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
-    usermod -aG docker ${local.linux_user}
-    newgrp docker
-  else
-    echo "Docker is already installed."
-  fi
-  
-  # run coder agent
-  sudo -u ${local.linux_user} sh -c '${try(coder_agent.dev[0].init_script, "")}'
-  --//--
-  EOT
+provider "aws" {
+  region = local.aws_region
 }
 
 data "aws_subnets" "private" {
@@ -115,22 +78,21 @@ data "coder_parameter" "instance_disk" {
   }
 }
 
-provider "aws" {
-  region = local.aws_region
-}
+data "coder_workspace" "dev" {}
 
-data "coder_workspace" "me" {
-}
+data "coder_workspace_owner" "me" {}
 
 resource "coder_agent" "dev" {
-  count          = data.coder_workspace.me.start_count
+  count          = data.coder_workspace.dev.start_count
   arch           = "amd64"
   auth           = "aws-instance-identity"
   os             = "linux"
   startup_script = <<-EOT
     set -e
-    # install and start code-server
-    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server --version 4.11.0
+    # Install the latest code-server.
+    # Append "--version x.x.x" to install a specific version of code-server.
+    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server
+    # Start code-server in the background.
     /tmp/code-server/bin/code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
   EOT
 
@@ -158,7 +120,7 @@ resource "coder_agent" "dev" {
 }
 
 resource "coder_app" "code-server" {
-  count        = data.coder_workspace.me.start_count
+  count        = data.coder_workspace.dev.start_count
   agent_id     = coder_agent.dev[0].id
   slug         = "code-server"
   display_name = "code-server"
@@ -174,17 +136,41 @@ resource "coder_app" "code-server" {
   }
 }
 
+data "cloudinit_config" "user_data" {
+  gzip          = false
+  base64_encode = false
+  boundary = "//"
+  part {
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
+
+    content = templatefile("${path.module}/cloud-init/cloud-config.yaml.tftpl", {
+      hostname   = local.hostname
+      linux_user = local.linux_user
+    })
+  }
+  part {
+    filename     = "userdata.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/cloud-init/userdata.sh.tftpl", {
+      linux_user = local.linux_user
+      init_script = try(coder_agent.dev[0].init_script, "")
+    })
+  }
+}
+
+
 resource "aws_instance" "dev" {
   ami               = "ami-0cf2b4e024cdb6960" # ubuntu
   availability_zone = "${local.aws_region}a"
   instance_type     = data.coder_parameter.instance_type.value
   subnet_id = tolist(data.aws_subnets.private.ids)[0]
-  user_data = local.user_data
+  user_data =  data.cloudinit_config.user_data.rendered
   root_block_device {
     volume_size = tonumber(data.coder_parameter.instance_disk.value)
   }
   tags = {
-    Name = "coder-${data.coder_workspace.me.owner}-${data.coder_workspace.me.name}"
+    Name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.dev.name}"
     # Required if you are using our example policy, see template README
     Coder_Provisioned = "true"
   }
@@ -211,5 +197,5 @@ resource "coder_metadata" "workspace_info" {
 
 resource "aws_ec2_instance_state" "dev" {
   instance_id = aws_instance.dev.id
-  state       = data.coder_workspace.me.transition == "start" ? "running" : "stopped"
+  state       = data.coder_workspace.dev.transition == "start" ? "running" : "stopped"
 }
