@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# packages we need
+apt-get update
+apt-get install -y jq
+
+# Install Docker
+if ! command -v docker &> /dev/null; then
+    echo "Docker not found, installing..."
+    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
+    usermod -aG docker ${linux_user}
+    newgrp docker
+else
+    echo "Docker is already installed."
+fi
+
+# Grabs token via the internal metadata server. This IP address is the same for all instances, no need to change it
+# https://docs.openstack.org/nova/rocky/user/metadata-service.html
+export CODER_AGENT_TOKEN=$(curl -s http://169.254.169.254/openstack/latest/meta_data.json | jq -r .meta.coder_agent_token)
+
+sudo --preserve-env=CODER_AGENT_TOKEN -u '${linux_user}' sh -c 'export && ${init_script}'

@@ -5,38 +5,49 @@ terraform {
     }
     openstack = {
       source  = "terraform-provider-openstack/openstack"
-      version = "~> 2.0.0"
+      version = "~> 3.0.0"
     }
   }
 }
 
 provider "openstack" {}
 
-
 data "coder_parameter" "instance_type" {
   name         = "instance_type"
   display_name = "Instance Type"
   description  = "What size instance for your workspace?"
-  default      = 3
+  default      = "m3.small"
   option {
-    name  = "m3.tiny (1 CPU, 3GB ram, 20GB disk)"
-    value = 1
+    name  = "m3.small (2 CPUs, 6GB mem)"
+    value = "m3.small"
   }
   option {
-    name  = "m3.small (2 CPUs, 6GB ram, 20GB disk"
-    value = 2
+    name  = "m3.quad (4 CPUs, 15GB mem)"
+    value = "m3.quad"
   }
   option {
-    name  = "m3.quad (4 CPUs, 15GB ram, 20GB disk)"
-    value = 3
+    name  = "m3.medium (8 CPUs, 30GB mem)"
+    value = "m3.medium"
   }
   option {
-    name  = "m3.medium (8 CPUs, 30GB ram, 60GB disk)"
-    value = 4
+    name  = "m3.large (16 CPUs, 60GB mem)"
+    value = "m3.large"
   }
   option {
-    name  = "m3.large (16 CPUs, 60GB ram, 60GB disk)"
-    value = 5
+    name  = "m3.xl (32 CPUs, 125GB mem)"
+    value = "m3.xl"
+  }
+  option {
+    name  = "g3.medium (8 CPUs, 30GB mem, GPU)"
+    value = "g3.medium"
+  }
+  option {
+    name  = "g3.large (16 CPUs, 60GB mem, GPU)"
+    value = "g3.large"
+  }
+  option {
+    name  = "g3.xl (32 CPUs, 125GB mem, GPU)"
+    value = "g3.xl"
   }
 }
 
@@ -44,70 +55,21 @@ data "coder_parameter" "instance_image" {
   name         = "instance_image"
   display_name = "Operating System"
   description  = "Choose an operating system for the instance."
-  default      = "b9d0deb4-4fc5-447d-a11b-24652feb5ef7"
+  default      = "2d2aeedb-b933-4db9-8f9c-c4d6079dbdfe"
   mutable      = false
   option {
-    name  = "Ubuntu Linux 24.04 LTS"
-    value = "b9d0deb4-4fc5-447d-a11b-24652feb5ef7"
+    name  = "Featured Minimal Ubuntu 24"
+    value = "2d2aeedb-b933-4db9-8f9c-c4d6079dbdfe"
   }
 }
 
-data "openstack_networking_network_v2" "terraform" {
-  name = "terraform_network"
+data "openstack_networking_network_v2" "dreamlab" {
+  name = "dreamlab_network"  # warning: this network is managed in the pulumi config
 }
 
 locals {
   linux_user = "coder"
-  user_data  = <<-EOT
-  Content-Type: multipart/mixed; boundary="//"
-  MIME-Version: 1.0
-
-  --//
-  Content-Type: text/cloud-config; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="cloud-config.txt"
-
-  #cloud-config
-  cloud_final_modules:
-  - [scripts-user, always]
-  hostname: ${lower(data.coder_workspace.env.name)}
-  users:
-  - name: ${local.linux_user}
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-
-  --//
-  Content-Type: text/x-shellscript; charset="us-ascii"
-  MIME-Version: 1.0
-  Content-Transfer-Encoding: 7bit
-  Content-Disposition: attachment; filename="userdata.txt"
-
-  #!/bin/bash
-  
-  # packages we need
-  apt-get update
-  apt-get install -y jq
-
-  # Install Docker
-  if ! command -v docker &> /dev/null
-  then
-    echo "Docker not found, installing..."
-    curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
-    usermod -aG docker ${local.linux_user}
-    newgrp docker
-  else
-    echo "Docker is already installed."
-  fi
-  
-  # Grabs token via the internal metadata server. This IP address is the same for all instances, no need to change it
-  # https://docs.openstack.org/nova/rocky/user/metadata-service.html
-  export CODER_AGENT_TOKEN=$(curl -s http://169.254.169.254/openstack/latest/meta_data.json | jq -r .meta.coder_agent_token)
-
-  # Run coder agent
-  sudo --preserve-env=CODER_AGENT_TOKEN -u ${local.linux_user} sh -c 'export  && ${try(coder_agent.dev[0].init_script, "")}'
-  --//--
-  EOT
+  hostname = lower(data.coder_workspace.env.name)
 }
 
 data "coder_workspace" "env" {}
@@ -165,24 +127,59 @@ resource "coder_app" "code-server" {
   }
 }
 
+data "cloudinit_config" "user_data" {
+  gzip          = false
+  base64_encode = false
+  boundary = "//"
+  part {
+    filename     = "cloud-config.yaml"
+    content_type = "text/cloud-config"
+
+    content = templatefile("${path.module}/cloud-init/cloud-config.yaml.tftpl", {
+      hostname   = local.hostname
+      linux_user = local.linux_user
+    })
+  }
+  part {
+    filename     = "userdata.sh"
+    content_type = "text/x-shellscript"
+    content = templatefile("${path.module}/cloud-init/userdata.sh.tftpl", {
+      linux_user = local.linux_user
+      init_script = try(coder_agent.dev[0].init_script, "")
+    })
+  }
+}
+
 
 # creating Ubuntu22 instance
 resource "openstack_compute_instance_v2" "vm" {
   name ="coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
   image_id  = data.coder_parameter.instance_image.value
-  flavor_id = data.coder_parameter.instance_type.value
+  flavor_name = data.coder_parameter.instance_type.value
   security_groups   = ["default"]
   metadata = {
     coder_agent_token = try(coder_agent.dev[0].token, "")
   }
-  user_data = local.user_data
+
+  user_data = data.cloudinit_config.user_data.rendered
+  
+  block_device {
+    uuid                  = data.coder_parameter.instance_image.value
+    source_type           = "image"
+    volume_size           = 120
+    boot_index            = 0
+    destination_type      = "volume"
+    delete_on_termination = true
+  }
   network {
-    name = data.openstack_networking_network_v2.terraform.name
+    name = data.openstack_networking_network_v2.dreamlab.name
   }
   lifecycle {
     ignore_changes = [ user_data ]
   }
-  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shelved_offloaded"
+  # shelved_offloaded is the preferred "stopped" state, but we can't change to that state and also update metdata...
+  # See this issue: 
+  power_state = data.coder_workspace.env.transition == "start" ? "active" : "shutoff"
   tags = ["Name=coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}", "Coder_Provisioned=true"]  
 }
 

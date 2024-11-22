@@ -3,6 +3,7 @@
 **.tfstate
 .tool-versions
 keys
+openrc.sh
 
 jetstream2/openrc.sh
 **.tfstate

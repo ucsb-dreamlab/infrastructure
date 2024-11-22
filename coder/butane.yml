@@ -50,6 +50,14 @@ storage:
           CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
           CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
           CODER_OIDC_ALLOW_SIGNUPS=false
+          # Jetstream2/OpenStack Credentials
+          OS_AUTH_TYPE=v3applicationcredential
+          OS_AUTH_URL=https://js2.jetstream-cloud.org:5000/v3/
+          OS_IDENTITY_API_VERSION=3
+          OS_REGION_NAME=IU
+          OS_INTERFACE=public
+          OS_APPLICATION_CREDENTIAL_ID={{ .Jetstream2CredentialID }}
+          OS_APPLICATION_CREDENTIAL_SECRET={{ .Jetstream2CredentialSecret }}
     
     - path: /etc/containers/systemd/coder-home.volume
       contents:
