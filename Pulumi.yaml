@@ -4,7 +4,7 @@ description: dreamlab infrastructure
 config:
   coder_instance_type: m7g.medium
   # https://fedoraproject.org/coreos/download?stream=stable&arch=aarch64#download_section
-  coder_instance_ami: ami-09e942c71d289e3cb 
+  coder_instance_ami: ami-052ae089ed932cb28 
   pulumi:tags:
     value:
       pulumi:template: aws-go

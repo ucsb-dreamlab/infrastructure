@@ -199,17 +199,23 @@ func ignition(ctx *pulumi.Context, coderConfig *Config) (pulumi.StringOutput, er
 	out = pulumi.All(
 		cfg.GetSecret("googleOAuth2ClientID"),
 		cfg.GetSecret("googleOAuth2ClientSecret"),
+		cfg.GetSecret("Jetstream2CredentialID"),
+		cfg.GetSecret("Jetstream2CredentialSecret"),
 	).ApplyT(func(args []interface{}) (string, error) {
 		vals := struct {
-			OIDCClientID     string
-			OIDCClientSecret string
-			Hostname         string
-			Domain           string
+			OIDCClientID               string
+			OIDCClientSecret           string
+			Jetstream2CredentialID     string
+			Jetstream2CredentialSecret string
+			Hostname                   string
+			Domain                     string
 		}{
-			OIDCClientID:     args[0].(string),
-			OIDCClientSecret: args[1].(string),
-			Hostname:         coderConfig.Hostname,
-			Domain:           coderConfig.DNS.Domain(),
+			OIDCClientID:               args[0].(string),
+			OIDCClientSecret:           args[1].(string),
+			Jetstream2CredentialID:     args[2].(string),
+			Jetstream2CredentialSecret: args[3].(string),
+			Hostname:                   coderConfig.Hostname,
+			Domain:                     coderConfig.DNS.Domain(),
 		}
 		myFuncs := template.FuncMap{
 			"domainEscape": func(d string) string {
