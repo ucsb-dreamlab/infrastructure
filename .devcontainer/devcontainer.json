@@ -12,7 +12,10 @@
     "features": {
       "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
     },
-    "mounts": ["source=dind-var-lib-docker,target=/var/lib/docker,type=volume"],
+    "mounts": [
+      "source=dind-var-lib-docker,target=/var/lib/docker,type=volume",
+      "source=${env:HOME}${env:USERPROFILE}/.aws,target=/home/vscode/.aws,type=bind"
+    ],
     "postCreateCommand": "devcontainer-links",
     //"workspaceFolder": "/workspaces/devcontainer",
     //"workspaceMount": "source=.,target=/home/vscode/devcontainer,type=bind,consistency=cached",
