@@ -12,6 +12,11 @@
     "features": {
       "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
     },
+    "customizations": {
+      "vscode": {
+        "extensions": ["hashicorp.terraform", "golang.go"]
+      }
+    },
     "mounts": [
       "source=dind-var-lib-docker,target=/var/lib/docker,type=volume",
       "source=${env:HOME}${env:USERPROFILE}/.aws,target=/home/vscode/.aws,type=bind"
@@ -22,3 +27,4 @@
     //"workspaceFolder": "/home/vscode/devcontainer",
     "forwardPorts": [1313, 2222, 6000, 7681, 8080]
   }
+ 
