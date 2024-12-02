@@ -27,6 +27,7 @@ storage:
           Image=ghcr.io/coder/coder:latest
           PublishPort=3000
           Volume=coder-home:/home
+          Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
           EnvironmentFile=/etc/coder/coder.env
           Label=traefik.enable="true"
           Label=traefik.http.routers.coder-secure.entrypoints="websecure"
@@ -59,6 +60,26 @@ storage:
           OS_APPLICATION_CREDENTIAL_ID={{ .Jetstream2CredentialID }}
           OS_APPLICATION_CREDENTIAL_SECRET={{ .Jetstream2CredentialSecret }}
     
+    - path: /etc/coder/lsit-kubeconfig.yaml
+      contents:
+        inline: |
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - name: "compute-lsit"
+            cluster:
+              server: "{{ .LSITClusterServer }}"
+          users:
+          - name: "compute-lsit"
+            user:
+              token: "{{ .LSITClusterToken }}"
+          contexts:
+          - name: "compute-lsit"
+            context:
+              user: "compute-lsit"
+              cluster: "compute-lsit"
+          current-context: "compute-lsit"
+
     - path: /etc/containers/systemd/coder-home.volume
       contents:
         inline: |
