@@ -7,3 +7,4 @@ openrc.sh
 
 jetstream2/openrc.sh
 **.tfstate
+**.tfstate.backup

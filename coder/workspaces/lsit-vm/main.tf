@@ -76,41 +76,35 @@ resource "harvester_cloudinit_secret" "coder-userdata" {
   name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
   namespace = var.namespace
   user_data = templatefile("${path.module}/cloud-init/cloud-config.yaml.tftpl", {
-        ssh_authorized_key = var.ssh_authorized_key
-        linux_user = local.linux_user
-        hostname = local.hostname
-        startup = base64encode(templatefile("${path.module}/cloud-init/startup.sh.tftpl",{
-          init_script = try(coder_agent.dev[0].init_script, "")
-          coder_agent_token = try(coder_agent.dev[0].token, "")
-          linux_user = local.linux_user
-        }))
-      })
+    ssh_authorized_key = var.ssh_authorized_key
+    coder_agent_token = try(coder_agent.dev[0].token, "")
+    linux_user = local.linux_user
+    hostname = local.hostname
+    init_script_b64 = base64encode(try(coder_agent.dev[0].init_script, ""))
+  })
 }
 
-# resource "harvester_volume" "coder-disk" {
-#   name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-#   namespace = var.namespace
-#   image = data.harvester_image.os_image.id
-#   size = "60Gi"
-# }
+resource "harvester_volume" "coder-disk" {
+  name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
+  namespace = var.namespace
+  image = data.harvester_image.os_image.id
+  size = "60Gi"
+}
 
 resource "harvester_virtualmachine" "coder-vm" {
-    count = data.coder_workspace.env.start_count
-    name        = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-    description =  "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
-    namespace   = var.namespace
-    restart_after_update = true
-    cpu    = 16
-    memory = "32Gi"
-    ssh_keys = [harvester_ssh_key.key.id]
+    name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
+    description = "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
+    namespace = var.namespace
+    run_strategy = data.coder_workspace.env.transition == "start" ? "RerunOnFailure" : "Halted"
+    cpu = 8
+    memory = "16Gi"
     disk {
         name       = "rootdisk"
         type       = "disk"
-        size       = "25Gi"
         bus        = "virtio"
         boot_order = 1
-        image       = data.harvester_image.os_image.id
-        auto_delete = true
+        existing_volume_name = harvester_volume.coder-disk.name
+        auto_delete          = false
     }
     network_interface {
         name         = "default"
@@ -118,6 +112,7 @@ resource "harvester_virtualmachine" "coder-vm" {
         type         = "bridge"
         network_name = "default/2176"
     }
+    ssh_keys = [harvester_ssh_key.key.id]
     cloudinit {
       user_data_secret_name  = harvester_cloudinit_secret.coder-userdata.name
     }
