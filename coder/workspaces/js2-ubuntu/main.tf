@@ -55,17 +55,23 @@ data "coder_parameter" "instance_image" {
   name         = "instance_image"
   display_name = "Operating System"
   description  = "Choose an operating system for the instance."
-  default      = "2d2aeedb-b933-4db9-8f9c-c4d6079dbdfe"
+  default      = "Featured-Minimal-Ubuntu24"
   mutable      = false
   option {
     name  = "Featured Minimal Ubuntu 24"
-    value = "2d2aeedb-b933-4db9-8f9c-c4d6079dbdfe"
+    value = "Featured-Minimal-Ubuntu24"
   }
 }
 
 data "openstack_networking_network_v2" "dreamlab" {
   name = "dreamlab_network"  # warning: this network is managed in the pulumi config
 }
+
+# data "openstack_images_image_v2" "os" {
+#   name        =  data.coder_parameter.instance_image.value
+#   most_recent = true
+#   visibility = "public"
+# }
 
 locals {
   linux_user = "coder"
@@ -154,23 +160,13 @@ data "cloudinit_config" "user_data" {
 # creating Ubuntu22 instance
 resource "openstack_compute_instance_v2" "vm" {
   name ="coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-  image_id  = data.coder_parameter.instance_image.value
+  image_name  = data.coder_parameter.instance_image.value
   flavor_name = data.coder_parameter.instance_type.value
   security_groups   = ["default"]
   metadata = {
     coder_agent_token = try(coder_agent.dev[0].token, "")
   }
-
   user_data = data.cloudinit_config.user_data.rendered
-  
-  block_device {
-    uuid                  = data.coder_parameter.instance_image.value
-    source_type           = "image"
-    volume_size           = 120
-    boot_index            = 0
-    destination_type      = "volume"
-    delete_on_termination = true
-  }
   network {
     name = data.openstack_networking_network_v2.dreamlab.name
   }
