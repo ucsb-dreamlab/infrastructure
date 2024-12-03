@@ -6,6 +6,8 @@ hostname: ${hostname}
 users:
   - default
   - name: ${linux_user}
+    passwd: $6$ae5c658f$VWpBJbdF36.p.XTFJMiPMXllTp55HQ1XrvP4Vquv0tCKB2VWk8x/1I0NVHpX/7kbi7SwfhTp3bPKLKEfvKPA40
+    lock_passwd: false
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     ssh_authorized_keys:
