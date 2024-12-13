@@ -1,5 +1,5 @@
 data "harvester_image" "os_image" {
-  display_name = "Ubuntu Minimal 24.04 LTS"
+  display_name = "almalinux-9-genericcloud-9.5-20241120.x86_64"
   namespace = var.namespace
 }
 
@@ -104,7 +104,7 @@ resource "harvester_virtualmachine" "coder-vm" {
     disk {
         name       = "rootdisk"
         type       = "disk"
-        bus        = "virtio"
+        bus        = "scsi"
         boot_order = 1
         existing_volume_name = harvester_volume.coder-disk.name
         auto_delete          = false
