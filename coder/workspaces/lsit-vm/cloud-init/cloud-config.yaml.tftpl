@@ -30,6 +30,7 @@ write_files:
       User=${linux_user}
       ExecStart=/opt/coder/init
       EnvironmentFile=/opt/coder/env
+      Environment=USE_CAP_NET_ADMIN=true
       Restart=always
       RestartSec=10
       TimeoutStopSec=90
