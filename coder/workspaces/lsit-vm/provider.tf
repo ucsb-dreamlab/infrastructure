@@ -12,5 +12,5 @@ terraform {
 }
 
 provider "harvester" {
-    kubeconfig = "${path.module}/compute-lsit.yaml"
+    kubeconfig = "/etc/coder/lsit-kubeconfig.yaml"
 }
