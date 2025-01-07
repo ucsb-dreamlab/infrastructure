@@ -1,11 +1,14 @@
 data "harvester_image" "os_image" {
-  display_name = "Ubuntu Minimal 24.04 LTS"
-  namespace = "dreamlab"
+  display_name = "almalinux-9-genericcloud-9.5-20241120.x86_64"
+  namespace = var.namespace
 }
 
 locals {
   hostname   = lower(data.coder_workspace.env.name)
   linux_user = "coder"
+  # names used for coder's resources in harvester: needs to be valid for
+  # kubernetes IDs.
+  k8s_name = lower(replace("coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"," ","_"))
 }
 
 data "coder_workspace" "env" {}
@@ -55,7 +58,6 @@ resource "coder_app" "code-server" {
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"
-
   healthcheck {
     url       = "http://localhost:13337/healthz"
     interval  = 3
@@ -65,15 +67,16 @@ resource "coder_app" "code-server" {
 
 # harvester requires an ssh key in the vm's userdata. This isn't actually used.
 resource "harvester_ssh_key" "key" {
-    name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-    namespace = "${var.namespace}"
-    public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKJ1r1Y/1mC/oyWLxb7fdeRiri3ZtSirJZPkmwEzKpNO"
+    name      = local.k8s_name
+    namespace = var.namespace
+    public_key = var.ssh_authorized_key
 }
 
-# the coder startup script is too large to be included directly in the vm
-# resource userdata, so we need to create a separate resource for it.
+# Coder configuration is attached to the vm using cloud init. Keep in mind:
+# harverster uses NoCloud data provider; it only allows yaml-based cloud config
+# in user data. Multipart is not supported. 
 resource "harvester_cloudinit_secret" "coder-userdata" {
-  name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
+  name = local.k8s_name
   namespace = var.namespace
   user_data = templatefile("${path.module}/cloud-init/cloud-config.yaml.tftpl", {
     ssh_authorized_key = var.ssh_authorized_key
@@ -85,23 +88,23 @@ resource "harvester_cloudinit_secret" "coder-userdata" {
 }
 
 resource "harvester_volume" "coder-disk" {
-  name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
+  name = local.k8s_name
   namespace = var.namespace
   image = data.harvester_image.os_image.id
   size = "60Gi"
 }
 
 resource "harvester_virtualmachine" "coder-vm" {
-    name = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"
-    description = "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
+    name = local.k8s_name
     namespace = var.namespace
+    description = "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
     run_strategy = data.coder_workspace.env.transition == "start" ? "RerunOnFailure" : "Halted"
     cpu = 8
     memory = "16Gi"
     disk {
         name       = "rootdisk"
         type       = "disk"
-        bus        = "virtio"
+        bus        = "scsi"
         boot_order = 1
         existing_volume_name = harvester_volume.coder-disk.name
         auto_delete          = false
@@ -110,6 +113,7 @@ resource "harvester_virtualmachine" "coder-vm" {
         name         = "default"
         model        = "virtio"
         type         = "bridge"
+        # using public network as it's faster
         network_name = "default/2176"
     }
     ssh_keys = [harvester_ssh_key.key.id]

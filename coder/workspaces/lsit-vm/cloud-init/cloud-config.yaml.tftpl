@@ -1,5 +1,4 @@
 #cloud-config
-package_update: true
 packages:
   - qemu-guest-agent
 hostname: ${hostname}
@@ -31,6 +30,7 @@ write_files:
       User=${linux_user}
       ExecStart=/opt/coder/init
       EnvironmentFile=/opt/coder/env
+      Environment=USE_CAP_NET_ADMIN=true
       Restart=always
       RestartSec=10
       TimeoutStopSec=90
@@ -43,6 +43,9 @@ write_files:
 runcmd:
   - systemctl enable --now qemu-guest-agent.service
   - systemctl enable --now coder-agent.service
+  # - curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
+  # - usermod -aG docker ${linux_user}
+  # - newgrp docker
 
 bootcmd:
   - mkdir -p /opt/coder
