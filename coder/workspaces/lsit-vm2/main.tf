@@ -113,6 +113,7 @@ resource "harvester_virtualmachine" "coder-vm" {
         # management network is default
         name         = "default"
         model        = "virtio"
+        
     }
     ssh_keys = [harvester_ssh_key.key.id]
     cloudinit {
