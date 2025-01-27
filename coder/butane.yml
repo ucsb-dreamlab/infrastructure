@@ -50,7 +50,8 @@ storage:
           CODER_OIDC_EMAIL_DOMAIN=ucsb.edu
           CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
           CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
-          CODER_OIDC_ALLOW_SIGNUPS=false
+          CODER_OIDC_ALLOW_SIGNUPS=true
+          
           # Jetstream2/OpenStack Credentials
           OS_AUTH_TYPE=v3applicationcredential
           OS_AUTH_URL=https://js2.jetstream-cloud.org:5000/v3/
