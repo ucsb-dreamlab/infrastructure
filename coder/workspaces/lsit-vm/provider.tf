@@ -3,10 +3,11 @@ terraform {
   required_providers {
     coder = {
       source = "coder/coder"
+      version = "2.1.2"
     }
     harvester = {
       source  = "harvester/harvester"
-      version = "0.6.5"
+      version = "0.6.6"
     }
   }
 }
