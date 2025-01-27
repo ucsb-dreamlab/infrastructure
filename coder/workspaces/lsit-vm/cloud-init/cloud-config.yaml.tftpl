@@ -1,17 +1,29 @@
 #cloud-config
 packages:
   - qemu-guest-agent
+  - python-is-python3
+  - git
 hostname: ${hostname}
 users:
   - default
   - name: ${linux_user}
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
+    #lock_passwd: false
+    #passwd: $6$rounds=4096$A9UFgVmA9VpslJKY$ta173gI7QxtpDaTiD/RkvlTZ4vpOgwn36FIW0i4S9nfhO61nZA6XkMuBbEbAyHfqcU9mAzn91Mtf.WYCGc5vT.
     ssh_authorized_keys:
       - ${ssh_authorized_key}
 
 ssh_authorized_keys:
  - ${ssh_authorized_key}
+
+fs_setup:
+- device: /dev/vda
+  filesystem: ext4
+  label: userdata
+
+mounts:
+- [/dev/vda, /home]
 
 write_files:
   - path: /opt/coder/init
@@ -40,9 +52,48 @@ write_files:
       [Install]
       WantedBy=multi-user.target
 
+  - path: /etc/rstudio/rserver.conf
+    permissions: "0644"
+    content: |
+      auth-none=1
+
+  - path: /etc/default/rstudio-server
+    permissions: "0644"
+    content: |
+      USER=${linux_user}
+
+  - path: /etc/apt/preferences.d/99cranapt
+    permissions: "0644"
+    content: |
+      Package: *
+      Pin: release o=CRAN-Apt Project
+      Pin: release l=CRAN-Apt Packages
+      Pin-Priority: 700
+
 runcmd:
   - systemctl enable --now qemu-guest-agent.service
   - systemctl enable --now coder-agent.service
+  
+  # install R with r2u packages (https://github.com/eddelbuettel/r2u)
+  # taken from https://github.com/eddelbuettel/r2u/blob/master/inst/scripts/add_cranapt_noble.sh
+  - apt update -qq && apt install -y --no-install-recommends wget ca-certificates gnupg gdebi-core
+  - wget -q -O- https://eddelbuettel.github.io/r2u/assets/dirk_eddelbuettel_key.asc > /etc/apt/trusted.gpg.d/cranapt_key.asc
+  - wget -q -O- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc > /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc
+  - gpg --keyserver keyserver.ubuntu.com --recv-keys 67C2D66C4B1D4339 51716619E084DAB9
+  - gpg --export --armor 67C2D66C4B1D4339 51716619E084DAB9 > /usr/share/keyrings/r2u.gpg
+  - echo "deb [arch=amd64] https://r2u.stat.illinois.edu/ubuntu noble main" > /etc/apt/sources.list.d/cranapt.list
+  - echo "deb [arch=amd64] https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" > /etc/apt/sources.list.d/cran_r.list
+  - apt update -qq && apt install -y --no-install-recommends r-base-core
+  - apt install -y --no-install-recommends python3-dbus python3-gi python3-apt make
+  - Rscript -e 'install.packages("bspm")'
+  - echo "suppressMessages(bspm::enable())" >> /usr/lib/R/etc/Rprofile.site
+  - echo "options(bspm.version.check=FALSE)" >> /usr/lib/R/etc/Rprofile.site  
+
+  # install RStudio
+  - wget https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2024.12.0-467-amd64.deb
+  - gdebi --non-interactive rstudio-server-2024.12.0-467-amd64.deb 
+  - rm rstudio-server-2024.12.0-467-amd64.deb 
+  
   # - curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh 2>&1 >/dev/null
   # - usermod -aG docker ${linux_user}
   # - newgrp docker
