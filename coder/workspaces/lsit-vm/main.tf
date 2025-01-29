@@ -75,6 +75,14 @@ resource "coder_agent" "dev" {
   }
 }
 
+module "rstudio" {
+  source =  "./rstudio"
+  count = data.coder_workspace.env.start_count
+  agent_id = coder_agent.dev[0].id
+  rserver_user = local.linux_user
+  order = 1
+}
+
 module "filebrowser" {
   count    = data.coder_workspace.env.start_count
   source   = "registry.coder.com/modules/filebrowser/coder"
@@ -84,12 +92,14 @@ module "filebrowser" {
   database_path = ".config/filebrowser.db"
 }
 
-module "rstudio" {
-  source =  "./rstudio"
+module "vscode-web" {
   count = data.coder_workspace.env.start_count
-  agent_id = coder_agent.dev[0].id
-  rserver_user = local.linux_user
+  source = "registry.coder.com/modules/vscode-web/coder"
+  version = "1.0.26"
   order = 3
+  agent_id = coder_agent.dev[0].id
+  accept_license = true
+  folder = "/home/coder"
 }
 
 # harvester requires an ssh key in the vm's userdata. This isn't actually used.
