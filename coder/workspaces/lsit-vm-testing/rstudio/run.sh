@@ -5,8 +5,7 @@ R_PATH=/usr/bin/R
 RSERVER_PATH=/usr/lib/rstudio-server/bin/rserver
 
 # store coder agent variables for rstudio session
-mkdir -p "$HOME/.config/rstudio"
-printenv | grep '^CODER_\|^GIT_\|^SSH_' > "$HOME/.config/rstudio/coder.env"
+printenv | grep '^CODER_\|^GIT_\|^SSH_' > "$HOME/.Renviron"
 
 if [ ! -f "$R_PATH" ]; then
     # install R with r2u packages (https://github.com/eddelbuettel/r2u)
@@ -35,17 +34,13 @@ fi
 
 if [ ! -f "$RSERVER_PATH" ]; then
     # install rstudio server
-    DEB=/tmp/rstudio-server.deb
     sudo sh -c 'apt install -y --no-install-recommends wget gdebi-core'
-    wget -O "$DEB" https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2024.12.0-467-amd64.deb
-    
+    DEB=/tmp/rstudio-server.deb
+    wget -qO "$DEB" https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2024.12.0-467-amd64.deb
     sudo mkdir -p /etc/rstudio
     sudo sh -c 'echo "auth-none=1" > /etc/rstudio/rserver.conf'
     sudo sh -c 'echo "USER=${rserver_user}" > /etc/default/rstudio-server'
-
+    sudo sh -c 'echo "session-ephemeral-env-vars=GIT_SSH_COMMAND:CODER_AGENT_TOKEN:CODER_SCRIPT_DATA_DIR" > /etc/rstudio/rsession.conf'
     sudo gdebi --non-interactive "$DEB"
     rm "$DEB"
-
-    # add script to .profile that adds coder environment vars in rstudio terminal
-    echo "if [ -n \"\$RSTUDIO\" ]; then while IFS=$'\n' read -r line; do export \"\$line\"; done < \$HOME/.config/rstudio/coder.env ;fi" >> $HOME/.profile
 fi
