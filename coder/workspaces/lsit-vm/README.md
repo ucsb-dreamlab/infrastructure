@@ -8,17 +8,18 @@ Coder workspaces are virtual machines (VMs) running a Linux-based operating syst
 * All workspaces are automatically deleted at the end of each quarter. The end of the Winter 2025 quarter is **March 21**.  
 * You may create and use **one workspace at a time**. If you have multiple active workspaces, they may be deleted without notice.  
 * Workspaces may be inaccessible during scheduled maintenance windows, which will be announced by email.  
-* Your workspaces will “stop” automatically after four hours of inactivity to conserve resources. To resume the workspace, click the “start” button in the top right corner of the workspace page.  
-* You may install additional software on the VM as needed. You have ‘sudo’ access on the VM.
+* Your workspaces will “stop” (shut off) automatically after **four hours** of inactivity to conserve resources. To resume the workspace, click the “start” button in the top right corner of the workspace page.  
+* You may install additional software on the VM as needed.   
+* Do not store confidential or sensitive information in your workspace. (Workspace data is accessible by DREAM Lab and LSIT staff).
 
 ## Workspace Resources
 
 Each workspace includes the following:
 
-| CPU | 4 vCPUs |
+| CPU | 2 vCPUs |
 | :---- | :---- |
-| Memory | 16 GiB |
-| Disk Storage | 20 GB for OS and 100 GB for user data (‘/home’ directory) |
+| Memory | 8 GiB |
+| Disk Storage | 15 GB for OS and 64 GB for user data (‘/home’ directory) |
 | Operating System | Ubuntu Linux (24.04 LTS) |
 | Software | R (v4.4.2) ; RStudio Server (2024.12.0+467); Python (v 3.12.3). |
 

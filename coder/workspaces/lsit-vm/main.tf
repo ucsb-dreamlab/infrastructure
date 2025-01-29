@@ -75,23 +75,6 @@ resource "coder_agent" "dev" {
   }
 }
 
-resource "coder_app" "rstudio" {
-  count        = data.coder_workspace.env.start_count
-  agent_id     = coder_agent.dev[0].id
-  slug         = "rstudio"
-  display_name = "RStudio"
-  url          = "http://localhost:8787"
-  icon         = "/icon/rstudio.svg"
-  subdomain    = true
-  share        = "owner"
-  order        = 1
-  healthcheck {
-    url       = "http://localhost:8787/health-check"
-    interval  = 4
-    threshold = 40
-  }
-}
-
 module "filebrowser" {
   count    = data.coder_workspace.env.start_count
   source   = "registry.coder.com/modules/filebrowser/coder"
@@ -101,21 +84,19 @@ module "filebrowser" {
   database_path = ".config/filebrowser.db"
 }
 
-module "vscode-web" {
+module "rstudio" {
+  source =  "./rstudio"
   count = data.coder_workspace.env.start_count
-  source = "registry.coder.com/modules/vscode-web/coder"
-  version = "1.0.26"
-  order = 3
   agent_id = coder_agent.dev[0].id
-  accept_license = true
-  folder = "/home/coder"
+  rserver_user = local.linux_user
+  order = 3
 }
 
 # harvester requires an ssh key in the vm's userdata. This isn't actually used.
 resource "harvester_ssh_key" "key" {
-    name      = local.k8s_name
-    namespace = var.namespace
-    public_key = var.ssh_authorized_key
+  name      = local.k8s_name
+  namespace = var.namespace
+  public_key = var.ssh_authorized_key
 }
 
 # Coder configuration is attached to the vm using cloud init. Keep in mind:
@@ -138,7 +119,7 @@ resource "harvester_volume" "coder-disk" {
   name = local.k8s_name
   namespace = var.namespace
   image = data.harvester_image.os_image.id
-  size = "20Gi"
+  size = "15Gi"
 }
 
 # user data disk
@@ -146,7 +127,7 @@ resource "harvester_volume" "user-disk" {
   name = "${local.k8s_name}-userdata"
   namespace = var.namespace
   storage_class_name = "csi-rbd-sc"
-  size = "100Gi"
+  size = "64Gi"
 }
 
 resource "harvester_virtualmachine" "coder-vm" {
@@ -154,8 +135,8 @@ resource "harvester_virtualmachine" "coder-vm" {
     namespace = var.namespace
     description = "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
     run_strategy = data.coder_workspace.env.transition == "start" ? "RerunOnFailure" : "Halted"
-    cpu = 4
-    memory = "16Gi"
+    cpu = 2
+    memory = "8Gi"
     disk {
         name       = "rootdisk"
         type       = "disk"
