@@ -15,7 +15,8 @@ locals {
 
 data "coder_parameter" "agreement" {
   name = "user_agreement"
-  display_name = "User agreement"
+  display_name = "User Agreement"
+  order = 0
   type = "string"
   mutable = true
   description = <<-EOT
@@ -29,6 +30,80 @@ data "coder_parameter" "agreement" {
 
 }
 
+data "coder_parameter" "rstudio_stack" {
+  name = "rstudio_stack"
+  display_name = "Include RStudio"
+  order = 5
+  type = "string"
+  mutable = true
+  description = "Install and enable RStudio Server in the workspace?"
+  default = "false"
+  option {
+    name = "Yes"
+    value = "true"
+  }
+  option {
+    name = "No"
+    value = "false"
+  }
+}
+
+
+data "coder_parameter" "jupyterlab_stack" {
+  name = "jupyterlab_stack"
+  display_name = "Include JupyterLab"
+  order = 10
+  type = "string"
+  mutable = true
+  description = "Install and enable JupyterLab in the workspace?"
+  default = "false"
+  option {
+    name = "Yes"
+    value = "true"
+  }
+  option {
+    name = "No"
+    value = "false"
+  }
+}
+
+data "coder_parameter" "vscode_stack" {
+  name = "vscode_stack"
+  display_name = "Include Visual Studio Code (Desktop)"
+  order = 15
+  type = "string"
+  mutable = true
+  description = "Install and enable the Visual Studio Code service? Requires [Visual Studio Code](https://code.visualstudio.com/) on your personal computer."
+  default = "false"
+  option {
+    name = "Yes"
+    value = "true"
+  }
+  option {
+    name = "No"
+    value = "false"
+  }
+}
+
+data "coder_parameter" "vscode_web_stack" {
+  name = "vscode_web_stack"
+  display_name = "Include Visual Studio Code (Web)"
+  order = 20
+  type = "string"
+  mutable = true
+  description = "Install and enable the browser-based Visual Studio Code service?"
+  default = "false"
+  option {
+    name = "Yes"
+    value = "true"
+  }
+  option {
+    name = "No"
+    value = "false"
+  }
+}
+
+
 
 data "coder_workspace" "env" {}
 data "coder_workspace_owner" "me" {}
@@ -39,14 +114,14 @@ resource "coder_agent" "dev" {
   auth           = "token"
   os             = "linux"
   startup_script = <<-EOT
-    set -e
-    # install and start code-server
-    curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/tmp/code-server --version 4.11.0
-    /tmp/code-server/bin/code-server --auth none --port 13337 >/tmp/code-server.log 2>&1 &
+    # install uv
+    # if ! command -v uv 2>&1 >/dev/null; then 
+    #   curl -LsSf https://astral.sh/uv/install.sh | sh;
+    # fi
   EOT
 
   display_apps {
-    vscode          = true
+    vscode          = data.coder_parameter.vscode_stack.value == "true" ? true : false
     vscode_insiders = false
     web_terminal    = true
     ssh_helper      = false
@@ -75,31 +150,41 @@ resource "coder_agent" "dev" {
   }
 }
 
+# enabled if vscode-web is selected
+module "vscode-web" {
+  count = data.coder_parameter.vscode_web_stack.value == "true" ? data.coder_workspace.env.start_count : 0
+  source = "registry.coder.com/modules/vscode-web/coder"
+  version = "1.0.26"
+  order = 1
+  agent_id = coder_agent.dev[0].id
+  accept_license = true
+  folder = "/home/coder"
+}
+
+# only enabled if rstudio was selected
 module "rstudio" {
   source =  "./rstudio"
-  count = data.coder_workspace.env.start_count
+  count = data.coder_parameter.rstudio_stack.value == "true" ? data.coder_workspace.env.start_count : 0
   agent_id = coder_agent.dev[0].id
   rserver_user = local.linux_user
-  order = 1
+  order = 2
+}
+
+# only enabled if jupyterlab was selected
+module "jupyterlab" {
+  source = "./jupyterlab"
+  count = data.coder_parameter.jupyterlab_stack.value == "true" ? data.coder_workspace.env.start_count : 0
+  agent_id = coder_agent.dev[0].id
+  order = 3
 }
 
 module "filebrowser" {
   count    = data.coder_workspace.env.start_count
   source   = "registry.coder.com/modules/filebrowser/coder"
   version  = "1.0.23"
-  order        = 2
+  order    = 4
   agent_id = coder_agent.dev[0].id
   database_path = ".config/filebrowser.db"
-}
-
-module "vscode-web" {
-  count = data.coder_workspace.env.start_count
-  source = "registry.coder.com/modules/vscode-web/coder"
-  version = "1.0.26"
-  order = 3
-  agent_id = coder_agent.dev[0].id
-  accept_license = true
-  folder = "/home/coder"
 }
 
 # harvester requires an ssh key in the vm's userdata. This isn't actually used.
