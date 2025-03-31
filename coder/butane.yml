@@ -51,7 +51,7 @@ storage:
           CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
           CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
           CODER_OIDC_ALLOW_SIGNUPS=true
-          CODER_OIDC_SIGN_IN_TEXT="UCSB Login"
+          CODER_OIDC_SIGN_IN_TEXT=UCSB Login
           
           # Jetstream2/OpenStack Credentials
           OS_AUTH_TYPE=v3applicationcredential
