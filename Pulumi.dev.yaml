@@ -9,5 +9,5 @@ config:
   dreamlab:Jetstream2CredentialSecret:
     secure: AAABAEEDcGdXKtGXTg0wdbwv8httM++ZDe1aIQ6t0MQ+Cy022URyc/U7bq6qEYepcfjDlN90dIXdxwNW7nCC47ERtxt0asjz4athROoC96iQmXi9fik2wsJxnxNQhi2QZce6ozVqupGs7k1i4uZHmMyCj3wcCQ==
   dreamlab:LSITClusterToken:
-    secure: AAABAIJvzHf9euYNfrNM5FxT+5AQblSnqz7eiiQBhpT9Ir4wIhsPmJ/Dk49wKn9GZnWwd3XCOPJxvxIJZzom4za7qit6Lgur51trj9E73pPOiAeSMFtNtBIxSPebZGaM6AqoxT6K1YFhlooZb14TFNiTCA==
+    secure: AAABAPuXIAnbmmsrLl0nIcJUAmoyK/hdw4DkeEFuh19EIfr/9LMqYPHJBg+v4pu7sRTS3VZTcKEVbemfw+QCcK/3lvsb1T/tXpCuLKQf/H4sJWspWJmkMZH1SHTvoyHJP2FlqTuHP7AVzwpTuoTEfSSmQA==
   dreamlab:LSITClusterServer: https://rancher.lsit.ucsb.edu/k8s/clusters/c-m-fjm68t66

@@ -24,7 +24,7 @@ storage:
 
           [Container]
           ContainerName=coder
-          Image=ghcr.io/coder/coder:v2.18.5
+          Image=ghcr.io/coder/coder:v2.20.2
           PublishPort=3000
           Volume=coder-home:/home
           Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
