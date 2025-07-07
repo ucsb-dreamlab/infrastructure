@@ -10,9 +10,6 @@ import (
 
 func main() {
 	pulumi.Run(func(ctx *pulumi.Context) error {
-		if _, err := dreamlab.NewJetstream2(ctx); err != nil {
-			return err
-		}
 		vpc, err := dreamlab.NewAWSVPC(ctx)
 		if err != nil {
 			return err

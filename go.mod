@@ -6,7 +6,6 @@ require (
 	github.com/coreos/butane v0.23.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/pulumi/pulumi-aws/sdk/v6 v6.75.0
-	github.com/pulumi/pulumi-openstack/sdk/v4 v4.1.3
 	github.com/pulumi/pulumi/sdk/v3 v3.160.0
 	golang.org/x/crypto v0.36.0
 )

@@ -24,7 +24,7 @@ storage:
 
           [Container]
           ContainerName=coder
-          Image=ghcr.io/coder/coder:v2.20.2
+          Image=ghcr.io/coder/coder:v2.23.2
           PublishPort=3000
           Volume=coder-home:/home
           Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
@@ -52,15 +52,6 @@ storage:
           CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
           CODER_OIDC_ALLOW_SIGNUPS=true
           CODER_OIDC_SIGN_IN_TEXT=UCSB Login
-          
-          # Jetstream2/OpenStack Credentials
-          OS_AUTH_TYPE=v3applicationcredential
-          OS_AUTH_URL=https://js2.jetstream-cloud.org:5000/v3/
-          OS_IDENTITY_API_VERSION=3
-          OS_REGION_NAME=IU
-          OS_INTERFACE=public
-          OS_APPLICATION_CREDENTIAL_ID={{ .Jetstream2CredentialID }}
-          OS_APPLICATION_CREDENTIAL_SECRET={{ .Jetstream2CredentialSecret }}
     
     - path: /etc/coder/lsit-kubeconfig.yaml
       contents:
