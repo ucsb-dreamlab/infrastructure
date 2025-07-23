@@ -3,6 +3,7 @@ package main
 import (
 	"dreamlab/coder"
 	"dreamlab/internal/dreamlab"
+	"dreamlab/ocfl"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
@@ -29,6 +30,18 @@ func main() {
 		}); err != nil {
 			return err
 		}
+
+		// data.dreamlab.ucsb.edu runs ocfl-server
+		if err := ocfl.New(ctx, "data", &ocfl.Config{
+			Hostname:     "data",
+			VPC:          vpc,
+			DNS:          dns,
+			InstanceAMI:  stackConfig.Get("coder_instance_ami"),
+			InstanceType: stackConfig.Get("coder_instance_type"),
+		}); err != nil {
+			return err
+		}
+
 		return nil
 	})
 }

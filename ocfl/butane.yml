@@ -1,0 +1,82 @@
+variant: fcos
+version: 1.4.0
+systemd:
+  units:
+    - name: podman.socket
+      enabled: true
+storage:
+  filesystems:
+    - device: /dev/nvme1n1
+      path: /var/lib/containers/storage/volumes
+      format: xfs
+      with_mount_unit: true
+  trees:
+    - local: etc
+      path: /etc
+  files:
+    - path: /etc/containers/systemd/tinyauth.container
+      contents:
+        inline: |
+          [Unit]
+          Description=Tinyauth Proxy
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          ContainerName=tinyauth
+          Image=ghcr.io/steveiliop56/tinyauth:v3
+          Environment=SECRET=bMZImFjk20eRt5E5cH9YHqMIbckMtxHq
+          Environment=USERS={{ .DataAdminPassword }}
+          Environment=APP_URL=https://auth.{{ .Domain }}
+          Network=ocfl.network
+          PublishPort=3000:3000
+          Label=traefik.enable="true"
+          Label=traefik.http.routers.tinyauth.entrypoints="websecure"
+          Label=traefik.http.routers.tinyauth.rule=Host(`auth.{{ .Domain }}`)
+          Label=traefik.http.routers.tinyauth.tls="true"
+          Label=traefik.http.routers.tinyauth.tls.certresolver="dnsresolver"
+          Label=traefik.http.routers.tinyauth.tls.domains[0].main="auth.{{ .Domain }}"
+          Label=traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik
+          
+          [Install]
+          WantedBy=multi-user.target
+
+    - path: /etc/containers/systemd/ocfl.container
+      contents:
+        inline: |
+          [Unit]
+          Description=OCFL Server
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          ContainerName=ocfl-server
+          Network=ocfl.network
+          Image=ghcr.io/srerickson/ocfl-server-31a809f238f10112a7aff681eeb05518:latest
+          Exec=-uploads /data/uploads -index /data/ocfl-server.db
+          EnvironmentFile=/etc/ocfl-server/container.env
+          PublishPort=8080:8080
+          Volume=ocfl.volume:/data
+          Label=traefik.enable="true"
+          Label=traefik.http.routers.ocfl-secure.entrypoints="websecure"
+          Label=traefik.http.routers.ocfl-secure.rule="Host(`{{ .Hostname }}.{{ .Domain }}`)"
+          Label=traefik.http.routers.ocfl-secure.tls="true"
+          Label=traefik.http.routers.ocfl-secure.tls.certresolver="dnsresolver"
+          Label=traefik.http.routers.ocfl-secure.tls.domains[0].main="{{ .Hostname }}.{{ .Domain }}"
+          Label=traefik.http.routers.ocfl-secure.middlewares=tinyauth
+          SecurityLabelDisable=true
+          
+          [Install]
+          WantedBy=multi-user.target
+    
+    - path: /etc/ocfl-server/container.env
+      contents:
+        inline: |
+          AWS_REGION=us-west-2
+          OCFL_ROOT=s3://dreamlab-public/ocfl
+    
+    - path: /etc/containers/systemd/ocfl.volume
+      contents:
+        inline: |
+          [Volume]
+          VolumeName=ocfl

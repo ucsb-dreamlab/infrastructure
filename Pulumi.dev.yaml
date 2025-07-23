@@ -7,3 +7,5 @@ config:
   dreamlab:LSITClusterToken:
     secure: AAABAA6NX1o88l68jamyICUAAf89SzNC/MpUcIYNlW2ga6EDcb/BQyM3M6UycZFWvzujikX5Cthmn0AD/o/+ZVHcirwa7ASJxRj51V7ba5hKZIZqHQXeo9yY9TxXeY5xlTKg9HFo0FUXVhT8ORZczvrmNQ==
   dreamlab:LSITClusterServer: https://rancher.lsit.ucsb.edu/k8s/clusters/c-m-fjm68t66
+  dreamlab:DataAdminPassword:
+    secure: AAABANAfoaJk3b7dUo8jKSYA50EVzZMvScokgIAHuYG+nShne2UCZX+GbeIYVsl/lwYDKxWgirRf9VQvrlBbdsMbcetAdNmCzaRW4CEBKECPR1CfdbQ0phpjgxX2HKxH0aAHCZw=
