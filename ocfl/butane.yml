@@ -25,7 +25,7 @@ storage:
           [Container]
           ContainerName=tinyauth
           Image=ghcr.io/steveiliop56/tinyauth:v3
-          Environment=SECRET=bMZImFjk20eRt5E5cH9YHqMIbckMtxHq
+          Environment=SECRET={{ .DataAppSecret }}
           Environment=USERS={{ .DataAdminPassword }}
           Environment=APP_URL=https://auth.{{ .Domain }}
           Network=ocfl.network

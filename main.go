@@ -31,7 +31,7 @@ func main() {
 			return err
 		}
 
-		// data.dreamlab.ucsb.edu runs ocfl-server
+		//data.dreamlab.ucsb.edu runs ocfl-server
 		if err := ocfl.New(ctx, "data", &ocfl.Config{
 			Hostname:     "data",
 			VPC:          vpc,

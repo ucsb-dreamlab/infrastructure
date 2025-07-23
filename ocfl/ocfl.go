@@ -204,17 +204,20 @@ func ignition(ctx *pulumi.Context, ocflConfig *Config) (pulumi.StringOutput, err
 		cfg.GetSecret("googleOAuth2ClientID"),
 		cfg.GetSecret("googleOAuth2ClientSecret"),
 		cfg.GetSecret("DataAdminPassword"),
+		cfg.GetSecret("DataAppSecret"),
 	).ApplyT(func(args []any) (string, error) {
 		vals := struct {
 			OIDCClientID      string
 			OIDCClientSecret  string
 			DataAdminPassword string
+			DataAppSecret     string
 			Hostname          string
 			Domain            string
 		}{
 			OIDCClientID:      args[0].(string),
 			OIDCClientSecret:  args[1].(string),
 			DataAdminPassword: args[2].(string),
+			DataAppSecret:     args[3].(string),
 			Hostname:          ocflConfig.Hostname,
 			Domain:            ocflConfig.DNS.Domain(),
 		}
