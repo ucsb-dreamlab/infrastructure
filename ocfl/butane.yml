@@ -36,7 +36,9 @@ storage:
           Label=traefik.http.routers.tinyauth.tls="true"
           Label=traefik.http.routers.tinyauth.tls.certresolver="dnsresolver"
           Label=traefik.http.routers.tinyauth.tls.domains[0].main="auth.{{ .Domain }}"
+          Label=traefik.http.routers.ocfl-secure.middlewares=secure-headers
           Label=traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik
+          Label=traefik.http.middlewares.secure-headers.headers.customrequestheaders.X-Forwarded-Proto=https
           
           [Install]
           WantedBy=multi-user.target
