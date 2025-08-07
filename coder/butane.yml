@@ -24,7 +24,7 @@ storage:
 
           [Container]
           ContainerName=coder
-          Image=ghcr.io/coder/coder:v2.23.2
+          Image=ghcr.io/coder/coder:v2.24.3
           PublishPort=3000
           Volume=coder-home:/home
           Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
@@ -51,6 +51,8 @@ storage:
           CODER_OIDC_CLIENT_ID={{ .OIDCClientID }}
           CODER_OIDC_CLIENT_SECRET={{ .OIDCClientSecret }}
           CODER_OIDC_ALLOW_SIGNUPS=true
+          CODER_OIDC_SCOPES=openid,profile,email
+          CODER_OIDC_AUTH_URL_PARAMS={"access_type": "offline", "prompt": "consent"}
           CODER_OIDC_SIGN_IN_TEXT=UCSB Login
     
     - path: /etc/coder/lsit-kubeconfig.yaml
