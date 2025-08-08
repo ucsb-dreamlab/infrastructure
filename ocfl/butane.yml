@@ -36,7 +36,6 @@ storage:
           Label=traefik.http.routers.tinyauth.tls="true"
           Label=traefik.http.routers.tinyauth.tls.certresolver="dnsresolver"
           Label=traefik.http.routers.tinyauth.tls.domains[0].main="auth.{{ .Domain }}"
-          Label=traefik.http.routers.ocfl-secure.middlewares=secure-headers
           Label=traefik.http.middlewares.tinyauth.forwardauth.address=http://tinyauth:3000/api/auth/traefik
           Label=traefik.http.middlewares.secure-headers.headers.customrequestheaders.X-Forwarded-Proto=https
           
@@ -54,11 +53,11 @@ storage:
           [Container]
           ContainerName=ocfl-server
           Network=ocfl.network
+          Volume=ocfl-data.volume:/data
           Image=ghcr.io/srerickson/ocfl-server-31a809f238f10112a7aff681eeb05518:latest
           Exec=-uploads /data/uploads -index /data/ocfl-server.db
           EnvironmentFile=/etc/ocfl-server/container.env
           PublishPort=8080:8080
-          Volume=ocfl.volume:/data
           Label=traefik.enable="true"
           Label=traefik.http.routers.ocfl-secure.entrypoints="websecure"
           Label=traefik.http.routers.ocfl-secure.rule="Host(`{{ .Hostname }}.{{ .Domain }}`)"
@@ -66,7 +65,7 @@ storage:
           Label=traefik.http.routers.ocfl-secure.tls.certresolver="dnsresolver"
           Label=traefik.http.routers.ocfl-secure.tls.domains[0].main="{{ .Hostname }}.{{ .Domain }}"
           Label=traefik.http.routers.ocfl-secure.middlewares=tinyauth
-          SecurityLabelDisable=true
+          Label=traefik.http.routers.ocfl-secure.middlewares=secure-headers
           
           [Install]
           WantedBy=multi-user.target
@@ -77,8 +76,8 @@ storage:
           AWS_REGION=us-west-2
           OCFL_ROOT=s3://dreamlab-public/ocfl
     
-    - path: /etc/containers/systemd/ocfl.volume
+    - path: /etc/containers/systemd/ocfl-data.volume
       contents:
         inline: |
           [Volume]
-          VolumeName=ocfl
+          VolumeName=ocfl-data
