@@ -5,7 +5,7 @@ Coder workspaces are virtual machines (VMs) running a Linux-based operating syst
 ## Workspace Policies
 
 * **Data stored on the workspace is not backed up.** You are responsible for maintaining backups of your data.  
-* All workspaces are automatically deleted at the end of each quarter. The end of the Spring 2025 quarter is **June 13th**.  
+* All workspaces are automatically deleted at the end of each academic quarter.
 * You may create and use **one workspace at a time**. If you have multiple active workspaces, they may be deleted without notice.  
 * Workspaces may be inaccessible during scheduled maintenance windows, which will be announced by email.  
 * Your workspaces will “stop” (shut off) automatically after **four hours** of inactivity to conserve resources. To resume the workspace, click the “start” button in the top right corner of the workspace page.  

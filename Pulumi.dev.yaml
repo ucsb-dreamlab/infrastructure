@@ -5,7 +5,7 @@ config:
   dreamlab:googleOAuth2ClientSecret:
     secure: AAABAN/8nb26KZeUz2ZKGUDtzDQP4qnohCkwFFax7KG1rPPySJ+YAdQws8DPeezTCaspNcE6IuT5ADR7G+Ct4wFChg==
   dreamlab:LSITClusterToken:
-    secure: AAABAKSVHlpaZmNo27dytdTvf24uyjDNP0b9fFPa6dz8JBRvpp93i0Or/Or+mzLlStO+4YSPQc7M8FwycIg6tkcBnTMvgBNIiQx9MiQSy+yf6HHW9RgosZa6B89uZ9eRzUCsAHhf2f4olVSx9x9M1hnCWw==
+    secure: AAABAJJ7OfZ9ajaJeoyecgbZgXuOWPTpyFMOs7mQk8aI+LKlv03Po7su9mXgTcPXciwVlgC5HGJOWgGI2aZmfFsdJA0vJ018s1IrdLKGJds27QJ+CVxa04sorbmpJRJQvheomzD+nJzsvjMJitHsg3zxTQ==
   dreamlab:LSITClusterServer: https://rancher.lsit.ucsb.edu/k8s/clusters/c-m-fjm68t66
   dreamlab:DataAdminPassword:
     secure: AAABANAfoaJk3b7dUo8jKSYA50EVzZMvScokgIAHuYG+nShne2UCZX+GbeIYVsl/lwYDKxWgirRf9VQvrlBbdsMbcetAdNmCzaRW4CEBKECPR1CfdbQ0phpjgxX2HKxH0aAHCZw=

@@ -1,5 +1,5 @@
 data "harvester_image" "os_image" {
-  display_name = "Ubuntu Minimal 24.04 LTS"
+  display_name = "noble-server-cloudimg-amd64"
   namespace = var.namespace
 }
 
@@ -154,7 +154,7 @@ resource "coder_agent" "dev" {
 module "vscode-web" {
   count = data.coder_parameter.vscode_web_stack.value == "true" ? data.coder_workspace.env.start_count : 0
   source = "registry.coder.com/modules/vscode-web/coder"
-  version = "1.0.26"
+  version = "1.3.1"
   order = 1
   agent_id = coder_agent.dev[0].id
   accept_license = true
@@ -181,7 +181,7 @@ module "jupyterlab" {
 module "filebrowser" {
   count    = data.coder_workspace.env.start_count
   source   = "registry.coder.com/modules/filebrowser/coder"
-  version  = "1.0.23"
+  version  = "1.1.2"
   order    = 4
   agent_id = coder_agent.dev[0].id
   database_path = ".config/filebrowser.db"
@@ -251,7 +251,7 @@ resource "harvester_virtualmachine" "coder-vm" {
         # management network is default
         name         = "default"
         model        = "virtio"
-        network_name = "harvester-public/1173"
+        network_name = "harvester-public/vlan-2176" #	or harvester-public/1173
         type = "bridge"        
     }
     ssh_keys = [harvester_ssh_key.key.id]

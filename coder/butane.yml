@@ -40,6 +40,33 @@ storage:
           [Install]
           WantedBy=multi-user.target
     
+    - path: /etc/containers/systemd/coder-private.container
+      contents:
+        inline: |
+          [Unit]
+          Description=Coder-Private Container
+          After=network-online.target
+          Wants=network-online.target
+
+          [Container]
+          ContainerName=coder-private
+          Image=ghcr.io/coder/coder:v2.24.3
+          PublishPort=4000
+          Volume=coder-private-home:/home
+          Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
+          EnvironmentFile=/etc/coder/coder.env
+          EnvironmentFile=/etc/coder/coder-private.env
+          Label=traefik.enable="true"
+          Label=traefik.http.routers.coder-private-secure.entrypoints="websecure"
+          Label=traefik.http.routers.coder-private-secure.rule='HostRegexp(`^(.+\\.)?{{ .Hostname }}-private\\.{{ domainEscape .Domain }}$`)'
+          Label=traefik.http.routers.coder-private-secure.tls="true"
+          Label=traefik.http.routers.coder-private-secure.tls.certresolver="dnsresolver"
+          Label=traefik.http.routers.coder-private-secure.tls.domains[0].main="{{ .Hostname }}-private.{{ .Domain }}"
+          Label=traefik.http.routers.coder-private-secure.tls.domains[1].main="*.{{ .Hostname }}-private.{{ .Domain }}"
+          
+          [Install]
+          WantedBy=multi-user.target
+
     - path: /etc/coder/coder.env
       contents:
         inline: |
@@ -54,6 +81,14 @@ storage:
           CODER_OIDC_SCOPES=openid,profile,email
           CODER_OIDC_AUTH_URL_PARAMS={"access_type": "offline", "prompt": "consent"}
           CODER_OIDC_SIGN_IN_TEXT=UCSB Login
+
+    - path: /etc/coder/coder-private.env
+      contents:
+        inline: |
+          CODER_HTTP_ADDRESS=0.0.0.0:4000
+          CODER_ACCESS_URL=https://{{ .Hostname }}-private.{{ .Domain }}
+          CODER_WILDCARD_ACCESS_URL=*.{{ .Hostname }}-private.{{ .Domain }}
+          CODER_OIDC_ALLOW_SIGNUPS=false
     
     - path: /etc/coder/lsit-kubeconfig.yaml
       contents:
@@ -80,3 +115,9 @@ storage:
         inline: |
           [Volume]
           VolumeName=coder-home
+
+    - path: /etc/containers/systemd/coder-private-home.volume
+      contents:
+        inline: |
+          [Volume]
+          VolumeName=coder-private-home

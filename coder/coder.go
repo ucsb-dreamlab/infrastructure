@@ -191,6 +191,31 @@ func New(ctx *pulumi.Context, resource string, coderConfig *Config) error {
 	if err != nil {
 		return err
 	}
+
+	recordPrivateResource := resource + "-private-dns"
+	_, err = route53.NewRecord(ctx, recordPrivateResource, &route53.RecordArgs{
+		Name:    pulumi.String(coderConfig.Hostname + "-private." + coderConfig.DNS.Domain()),
+		ZoneId:  coderConfig.DNS.ZoneId,
+		Type:    pulumi.String("A"),
+		Records: pulumi.StringArray{eip.PublicIp},
+		Ttl:     pulumi.Int(600),
+	})
+	if err != nil {
+		return err
+	}
+
+	wildcardRecordPrivateResource := resource + "-wildcard-private-dns"
+	_, err = route53.NewRecord(ctx, wildcardRecordPrivateResource, &route53.RecordArgs{
+		Name:    pulumi.String("*." + coderConfig.Hostname + "-private." + coderConfig.DNS.Domain()),
+		ZoneId:  coderConfig.DNS.ZoneId,
+		Type:    pulumi.String("A"),
+		Records: pulumi.StringArray{eip.PublicIp},
+		Ttl:     pulumi.Int(600),
+	})
+	if err != nil {
+		return err
+	}
+
 	ctx.Export(coderConfig.Hostname+"-publicIP", eip.PublicIp)
 	return nil
 }
