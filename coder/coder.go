@@ -229,12 +229,14 @@ func ignition(ctx *pulumi.Context, coderConfig *Config) (pulumi.StringOutput, er
 		cfg.GetSecret("googleOAuth2ClientSecret"),
 		cfg.Get("LSITClusterServer"),
 		cfg.GetSecret("LSITClusterToken"),
+		cfg.GetSecret("LSITOuterRimToken"),
 	).ApplyT(func(args []interface{}) (string, error) {
 		vals := struct {
 			OIDCClientID      string
 			OIDCClientSecret  string
 			LSITClusterServer string
 			LSITClusterToken  string
+			LSITOuterRimToken string
 			Hostname          string
 			Domain            string
 		}{
@@ -242,6 +244,7 @@ func ignition(ctx *pulumi.Context, coderConfig *Config) (pulumi.StringOutput, er
 			OIDCClientSecret:  args[1].(string),
 			LSITClusterServer: args[2].(string),
 			LSITClusterToken:  args[3].(string),
+			LSITOuterRimToken: args[4].(string),
 			Hostname:          coderConfig.Hostname,
 			Domain:            coderConfig.DNS.Domain(),
 		}

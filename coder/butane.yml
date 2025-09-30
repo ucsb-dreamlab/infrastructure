@@ -27,7 +27,7 @@ storage:
           Image=ghcr.io/coder/coder:v2.24.3
           PublishPort=3000
           Volume=coder-home:/home
-          Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
+          Volume=/etc/coder/kubeconfig:/etc/coder/kubeconfig
           EnvironmentFile=/etc/coder/coder.env
           Label=traefik.enable="true"
           Label=traefik.http.routers.coder-secure.entrypoints="websecure"
@@ -53,7 +53,7 @@ storage:
           Image=ghcr.io/coder/coder:v2.24.3
           PublishPort=4000
           Volume=coder-private-home:/home
-          Volume=/etc/coder/lsit-kubeconfig.yaml:/etc/coder/lsit-kubeconfig.yaml
+          Volume=/etc/coder/kubeconfig:/etc/coder/kubeconfig
           EnvironmentFile=/etc/coder/coder.env
           EnvironmentFile=/etc/coder/coder-private.env
           Label=traefik.enable="true"
@@ -90,7 +90,7 @@ storage:
           CODER_WILDCARD_ACCESS_URL=*.{{ .Hostname }}-private.{{ .Domain }}
           CODER_OIDC_ALLOW_SIGNUPS=false
     
-    - path: /etc/coder/lsit-kubeconfig.yaml
+    - path: /etc/coder/kubeconfig/compute.yaml
       contents:
         inline: |
           apiVersion: v1
@@ -109,6 +109,27 @@ storage:
               user: "compute-lsit"
               cluster: "compute-lsit"
           current-context: "compute-lsit"
+
+    - path: /etc/coder/kubeconfig/outerrim.yaml
+      contents:
+        inline: |
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - name: "outerrim"
+            cluster:
+              server: "https://console.cloud.lsit.ucsb.edu/k8s/clusters/c-zt9r4"
+          users:
+          - name: "outerrim"
+            user:
+              token: "{{ .LSITOuterRimToken }}"
+          contexts:
+          - name: "outerrim"
+            context:
+              user: "outerrim"
+              cluster: "outerrim"
+          current-context: "outerrim"
+
 
     - path: /etc/containers/systemd/coder-home.volume
       contents:

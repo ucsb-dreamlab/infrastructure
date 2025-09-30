@@ -3,15 +3,15 @@ terraform {
   required_providers {
     coder = {
       source = "coder/coder"
-      version = "2.8.0"
+      version = "2.11.0"
     }
     harvester = {
       source  = "harvester/harvester"
-      version = "0.6.7"
+      version = "1.6.0"
     }
   }
 }
 
 provider "harvester" {
-    kubeconfig = "/etc/coder/lsit-kubeconfig.yaml"
+    kubeconfig = "/etc/coder/kubeconfig/outerrim.yaml"
 }

@@ -1,17 +1,14 @@
 #cloud-config
 packages:
   - qemu-guest-agent
-  - python-is-python3
-  - git
-  - nano
+
 hostname: ${hostname}
 users:
   - default
   - name: ${linux_user}
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
-    #lock_passwd: false
-    #passwd: $6$rounds=4096$A9UFgVmA9VpslJKY$ta173gI7QxtpDaTiD/RkvlTZ4vpOgwn36FIW0i4S9nfhO61nZA6XkMuBbEbAyHfqcU9mAzn91Mtf.WYCGc5vT.
+    groups: docker
     ssh_authorized_keys:
       - ${ssh_authorized_key}
 
@@ -56,7 +53,6 @@ write_files:
 runcmd:
   - systemctl enable --now qemu-guest-agent.service
   - systemctl enable --now coder-agent.service
-  - apt-mark hold linux-image-*
 bootcmd:
   - mkdir -p /opt/coder
   - echo "CODER_AGENT_TOKEN=${coder_agent_token}" > /opt/coder/env

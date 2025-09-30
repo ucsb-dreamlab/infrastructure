@@ -16,13 +16,13 @@ Coder workspaces are virtual machines (VMs) running a Linux-based operating syst
 
 Each workspace includes the following:
 
-| Resource         | Description                                                     |
-| :--------------- | :-------------------------------------------------------------- |
-| CPU              | 2 vCPUs                                                         |
-| Memory           | 8 GiB                                                           |
-| Disk Storage     | 15 GB for OS and 64 GB for user data (‘/home’ directory)        |
-| Operating System | Ubuntu Linux (24.04 LTS)                                        |
-| Software         | R (v4.4.2) ; RStudio Server (2024.12.0+467); Python (v 3.12.3). |
+| Resource         | Description                                               |
+| :--------------- | :-------------------------------------------------------- |
+| CPU              | 4 vCPUs                                                   |
+| Memory           | 16 GiB                                                    |
+| Disk Storage     | 15 GB for OS and 64 GB for user data (‘/home’ directory)  |
+| Operating System | Ubuntu Linux (24.04 LTS)                                  |
+| Software         | R (v4.5.1) ; RStudio Server (2025.09.0); Pixi (v 0.55.0). |
 
 You have root access to your workspace VM, allowing you to install software using the `sudo apt install…` command.
 

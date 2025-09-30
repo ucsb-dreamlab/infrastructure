@@ -11,3 +11,5 @@ config:
     secure: AAABANAfoaJk3b7dUo8jKSYA50EVzZMvScokgIAHuYG+nShne2UCZX+GbeIYVsl/lwYDKxWgirRf9VQvrlBbdsMbcetAdNmCzaRW4CEBKECPR1CfdbQ0phpjgxX2HKxH0aAHCZw=
   dreamlab:DataAppSecret:
     secure: AAABALJIBZbp+/PNmbIQ3sGKXqdLTLsdmfcp2AwaaUsi8wgAKCDgjQJtxFYKTMjbuw1mqN2TJe8wRXYT25/68g==
+  dreamlab:LSITOuterRimToken:
+    secure: AAABAKgVyLrqOZNafXqAVLIrJKS4ZVynvTOOcfCWyZgeR5aLkl10jVOw6vwsOgXIVekVS52EVS5FWEgsEoNV45uxHj+ZLC0R839Bp3/6Fte1ravQ/zlpIIbzFEjb1aPCugDNFoIJdGv3VBdIQ5onXU860w==

@@ -72,4 +72,9 @@ resource "coder_app" "jupyterlab" {
   subdomain    = var.subdomain
   share        = var.share
   order        = var.order
+  healthcheck {
+    url       = "http://localhost:${var.port}/metrics" 
+    interval  = 4
+    threshold = 40
+  }
 }

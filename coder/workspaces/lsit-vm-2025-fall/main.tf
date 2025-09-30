@@ -1,5 +1,5 @@
 data "harvester_image" "os_image" {
-  display_name = "noble-server-cloudimg-amd64"
+  display_name = "coder-rstudio-docker-20250930"
   namespace = var.namespace
 }
 
@@ -9,7 +9,7 @@ locals {
   # names used for coder's resources in harvester: needs to be valid for
   # kubernetes IDs.
   k8s_name = lower(replace("coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"," ","_"))
-  workspace_agreement = "https://coder.dreamlab.ucsb.edu/templates/lsit-vm/docs"
+  workspace_agreement = "https://github.com/ucsb-dreamlab/infrastructure/wiki/Coder-Workspaces#policies"
 }
 
 
@@ -108,16 +108,15 @@ data "coder_parameter" "vscode_web_stack" {
 data "coder_workspace" "env" {}
 data "coder_workspace_owner" "me" {}
 
-resource "coder_agent" "dev" {
+resource "coder_agent" "workspace" {
   count          = data.coder_workspace.env.start_count
   arch           = "amd64"
   auth           = "token"
   os             = "linux"
+  
   startup_script = <<-EOT
-    # install uv
-    # if ! command -v uv 2>&1 >/dev/null; then 
-    #   curl -LsSf https://astral.sh/uv/install.sh | sh;
-    # fi
+    # install pixi
+    curl -fsSL https://pixi.sh/install.sh | sh
   EOT
 
   display_apps {
@@ -154,9 +153,9 @@ resource "coder_agent" "dev" {
 module "vscode-web" {
   count = data.coder_parameter.vscode_web_stack.value == "true" ? data.coder_workspace.env.start_count : 0
   source = "registry.coder.com/modules/vscode-web/coder"
-  version = "1.3.1"
+  version = "1.4.1"
   order = 1
-  agent_id = coder_agent.dev[0].id
+  agent_id = coder_agent.workspace[0].id
   accept_license = true
   folder = "/home/coder"
 }
@@ -165,7 +164,7 @@ module "vscode-web" {
 module "rstudio" {
   source =  "./rstudio"
   count = data.coder_parameter.rstudio_stack.value == "true" ? data.coder_workspace.env.start_count : 0
-  agent_id = coder_agent.dev[0].id
+  agent_id = coder_agent.workspace[0].id
   rserver_user = local.linux_user
   order = 2
 }
@@ -174,7 +173,7 @@ module "rstudio" {
 module "jupyterlab" {
   source = "./jupyterlab"
   count = data.coder_parameter.jupyterlab_stack.value == "true" ? data.coder_workspace.env.start_count : 0
-  agent_id = coder_agent.dev[0].id
+  agent_id = coder_agent.workspace[0].id
   order = 3
 }
 
@@ -183,7 +182,7 @@ module "filebrowser" {
   source   = "registry.coder.com/modules/filebrowser/coder"
   version  = "1.1.2"
   order    = 4
-  agent_id = coder_agent.dev[0].id
+  agent_id = coder_agent.workspace[0].id
   database_path = ".config/filebrowser.db"
 }
 
@@ -202,10 +201,10 @@ resource "harvester_cloudinit_secret" "coder-userdata" {
   namespace = var.namespace
   user_data = templatefile("${path.module}/cloud-init/cloud-config.yaml.tftpl", {
     ssh_authorized_key = var.ssh_authorized_key
-    coder_agent_token = try(coder_agent.dev[0].token, "")
+    coder_agent_token = try(coder_agent.workspace[0].token, "")
     linux_user = local.linux_user
     hostname = local.hostname
-    init_script_b64 = base64encode(try(coder_agent.dev[0].init_script, ""))
+    init_script_b64 = base64encode(try(coder_agent.workspace[0].init_script, ""))
   })
 }
 
@@ -230,8 +229,8 @@ resource "harvester_virtualmachine" "coder-vm" {
     namespace = var.namespace
     description = "coder vm: ${data.coder_workspace_owner.me.name} ${data.coder_workspace.env.name}"
     run_strategy = data.coder_workspace.env.transition == "start" ? "RerunOnFailure" : "Halted"
-    cpu = 2
-    memory = "8Gi"
+    cpu = 4
+    memory = "16Gi"
     disk {
         name       = "rootdisk"
         type       = "disk"
@@ -251,7 +250,8 @@ resource "harvester_virtualmachine" "coder-vm" {
         # management network is default
         name         = "default"
         model        = "virtio"
-        network_name = "harvester-public/vlan-2176" #	or harvester-public/1173
+        network_name = "harvester-public/1173"        # private
+        # network_name = "harvester-public/2176"        # public
         type = "bridge"        
     }
     ssh_keys = [harvester_ssh_key.key.id]
