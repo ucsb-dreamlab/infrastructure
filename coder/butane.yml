@@ -24,7 +24,7 @@ storage:
 
           [Container]
           ContainerName=coder
-          Image=ghcr.io/coder/coder:v2.24.3
+          Image=ghcr.io/coder/coder:v2.25.2
           PublishPort=3000
           Volume=coder-home:/home
           Volume=/etc/coder/kubeconfig:/etc/coder/kubeconfig
@@ -50,7 +50,7 @@ storage:
 
           [Container]
           ContainerName=coder-private
-          Image=ghcr.io/coder/coder:v2.24.3
+          Image=ghcr.io/coder/coder:v2.25.2
           PublishPort=4000
           Volume=coder-private-home:/home
           Volume=/etc/coder/kubeconfig:/etc/coder/kubeconfig
