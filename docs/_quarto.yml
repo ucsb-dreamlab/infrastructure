@@ -1,0 +1,32 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Dreamlab Coder Workspaces"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: getting-started.qmd
+        text: Getting Started
+      - href: integrations.qmd
+        text: Integrations
+      - href: special-cases.qmd
+        text: Special Cases
+      - href: admin.qmd
+        text: Admin
+  sidebar:
+    - id: 'getting_started'
+      title: 'Getting Started'
+      style: 'docked'
+      background: 'light'
+      contents:
+        - text: 'Getting Started'
+          href: getting-started.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
