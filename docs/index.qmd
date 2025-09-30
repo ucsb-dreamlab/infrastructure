@@ -1,0 +1,25 @@
+---
+title: "Dreamlab Coder Workspaces"
+---
+
+Coder Workspaces are on-demand virtual machines provided by UCSB Dreamlab, running Ubuntu 24.04 LTS with commonly used data science tools. They are accessible to anyone with an active UCSB Net ID.
+
+## Key Features & Specifications
+
+| Resource | Description |
+| :--------------- | :-------------------------------------------------------- |
+| CPU | 4 vCPUs |
+| Memory | 16 GiB |
+| Disk Storage | 15 GB for OS and 64 GB for user data (‘/home’ directory) |
+| Operating System | Ubuntu Linux (24.04 LTS) |
+| Software | R (v4.5.1) ; RStudio Server (2025.09.0); Pixi (v 0.55.0). Additional software can be installed, using the `sudo apt install` command.
+
+## Policies
+
+*   **Data Backup:** Data is not backed up; users are responsible for their own backups.
+*   **Deletion:** All workspaces are automatically deleted at the end of each quarter.
+*   **Limit:** Users may create and use only one workspace at a time. Multiple active workspaces may be deleted without notice.
+*   **Maintenance:** Workspaces may be inaccessible during scheduled maintenance windows (announced via email).
+*   **Inactivity:** Workspaces stop automatically after four hours of inactivity to conserve resources. They can be resumed by clicking the "start" button.
+*   **Software Installation:** Users may install additional software.
+*   **Access by Staff:** Workspaces may be accessed by staff in the Library or LSIT. Confidential or sensitive information should not be stored.
