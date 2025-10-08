@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Administration – Dreamlab Coder Workspaces</title>
+<title>Special Use Cases – DREAM Lab Coder Workspaces</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -59,7 +59,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
 <script src="site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="site_libs/quarto-search/fuse.min.js"></script>
@@ -75,13 +74,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-dc55a5b9e770e841cd82e46aadbfb9b0.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-ce3cd9752fa19540e204c10d26179311.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
-  "location": "navbar",
+  "location": "sidebar",
   "copy-button": false,
   "collapse-after": 3,
-  "panel-placement": "end",
-  "type": "overlay",
+  "panel-placement": "start",
+  "type": "textbox",
   "limit": 50,
   "keyboard-shortcut": [
     "f",
@@ -108,54 +107,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="quarto-light">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
-      <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a href="./index.html" class="navbar-brand navbar-brand-logo">
-    </a>
-    <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">Dreamlab Coder Workspaces</span>
-    </a>
-  </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-  <span class="navbar-toggler-icon"></span>
-</button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
-<span class="menu-text">Home</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./getting-started.html"> 
-<span class="menu-text">Getting Started</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./integrations.html"> 
-<span class="menu-text">Integrations</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./special-cases.html"> 
-<span class="menu-text">Special Cases</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="./admin.html" aria-current="page"> 
-<span class="menu-text">Admin</span></a>
-  </li>  
-</ul>
-          </div> <!-- /navcollapse -->
-            <div class="quarto-navbar-tools">
-</div>
-      </div> <!-- /container-fluid -->
-    </nav>
-</header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
@@ -163,8 +119,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#administering-the-service" id="toc-administering-the-service" class="nav-link active" data-scroll-target="#administering-the-service">Administering the Service</a></li>
-  <li><a href="#messaging-users" id="toc-messaging-users" class="nav-link" data-scroll-target="#messaging-users">Messaging Users</a></li>
+  <li><a href="#installing-gemini-cli" id="toc-installing-gemini-cli" class="nav-link active" data-scroll-target="#installing-gemini-cli">Installing Gemini CLI</a></li>
+  <li><a href="#accessing-shared-datasets-experimental" id="toc-accessing-shared-datasets-experimental" class="nav-link" data-scroll-target="#accessing-shared-datasets-experimental">Accessing Shared Datasets (Experimental)</a></li>
+  <li><a href="#connecting-to-the-library-vpn-for-library-staff" id="toc-connecting-to-the-library-vpn-for-library-staff" class="nav-link" data-scroll-target="#connecting-to-the-library-vpn-for-library-staff">Connecting to the Library VPN (for library staff)</a></li>
   </ul>
 </nav>
     </div>
@@ -173,7 +130,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Administration</h1>
+<h1 class="title">Special Use Cases</h1>
 </div>
 
 
@@ -190,16 +147,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="administering-the-service" class="level2">
-<h2 class="anchored" data-anchor-id="administering-the-service">Administering the Service</h2>
-<p>Primarily administered by Seth Erickson (Library) and LSIT members (user/template management).</p>
+<section id="installing-gemini-cli" class="level2">
+<h2 class="anchored" data-anchor-id="installing-gemini-cli">Installing Gemini CLI</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-o-</span> https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh <span class="kw">|</span> <span class="fu">bash</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">.</span> <span class="st">"</span><span class="va">$HOME</span><span class="st">/.nvm/nvm.sh"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">nvm</span> install 22</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> @google/gemini-cli</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">gemini</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Authentication is required on first run (copy/paste URL and key). It’s recommended to run <code>gemini</code> inside a project directory.</p>
 </section>
-<section id="messaging-users" class="level2">
-<h2 class="anchored" data-anchor-id="messaging-users">Messaging Users</h2>
-<p>To generate a list of user emails (requires admin privileges):</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">coder</span> login coder.dreamlab.ucsb.edu</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">coder</span> users list <span class="at">--column</span> email</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>These commands can be run from a coder workspace.</p>
+<section id="accessing-shared-datasets-experimental" class="level2">
+<h2 class="anchored" data-anchor-id="accessing-shared-datasets-experimental">Accessing Shared Datasets (Experimental)</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install nfs-common</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir /mnt/datasets</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mount 10.2.17.91:/mnt/datasets /mnt/datasets</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="connecting-to-the-library-vpn-for-library-staff" class="level2">
+<h2 class="anchored" data-anchor-id="connecting-to-the-library-vpn-for-library-staff">Connecting to the Library VPN (for library staff)</h2>
+<ol type="1">
+<li>Login to <a href="https://vpn.library.ucsb.edu" class="uri">https://vpn.library.ucsb.edu</a>, download <code>client.ovpn</code>.</li>
+<li>Upload <code>client.ovpn</code> to your workspace using the File Browser.</li>
+<li>Install VPN client: <code>bash     sudo apt install -y apt-transport-https curl     sudo mkdir -p /etc/apt/keyrings     sudo sh -c 'curl -sSfL https://packages.openvpn.net/packages-repo.gpg &gt;/etc/apt/keyrings/openvpn.asc'     sudo sh -c 'echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main" &gt;&gt;/etc/apt/sources.list.d/openvpn3.list'     sudo apt update     sudo apt install -y openvpn3</code></li>
+<li>Import profile: <code>openvpn3 config-import --config $client.ovpn</code></li>
+<li>Start session: <code>openvpn3 session-start --config client.ovpn</code> (prompts for library credentials).</li>
+<li>Disconnect: <code>openvpn3 session-manage --disconnect --config client.ovpn</code>
+<ul>
+<li><em>Note:</em> DNS name resolution may be broken after disconnecting; <code>sudo systemctl restart systemd-resolved</code> might fix it.</li>
+</ul></li>
+</ol>
 
 
 </section>
