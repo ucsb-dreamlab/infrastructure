@@ -1,0 +1,165 @@
+[
+  {
+    "objectID": "special-cases.html",
+    "href": "special-cases.html",
+    "title": "Special Use Cases",
+    "section": "",
+    "text": "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash\n. \"$HOME/.nvm/nvm.sh\"\nnvm install 22\nnpm install -g @google/gemini-cli\ngemini\nAuthentication is required on first run (copy/paste URL and key). It’s recommended to run gemini inside a project directory."
+  },
+  {
+    "objectID": "special-cases.html#installing-gemini-cli",
+    "href": "special-cases.html#installing-gemini-cli",
+    "title": "Special Use Cases",
+    "section": "",
+    "text": "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash\n. \"$HOME/.nvm/nvm.sh\"\nnvm install 22\nnpm install -g @google/gemini-cli\ngemini\nAuthentication is required on first run (copy/paste URL and key). It’s recommended to run gemini inside a project directory."
+  },
+  {
+    "objectID": "special-cases.html#accessing-shared-datasets-experimental",
+    "href": "special-cases.html#accessing-shared-datasets-experimental",
+    "title": "Special Use Cases",
+    "section": "Accessing Shared Datasets (Experimental)",
+    "text": "Accessing Shared Datasets (Experimental)\nsudo apt install nfs-common\nsudo mkdir /mnt/datasets\nsudo mount 10.2.17.91:/mnt/datasets /mnt/datasets"
+  },
+  {
+    "objectID": "special-cases.html#connecting-to-the-library-vpn-for-library-staff",
+    "href": "special-cases.html#connecting-to-the-library-vpn-for-library-staff",
+    "title": "Special Use Cases",
+    "section": "Connecting to the Library VPN (for library staff)",
+    "text": "Connecting to the Library VPN (for library staff)\n\nLogin to https://vpn.library.ucsb.edu, download client.ovpn.\nUpload client.ovpn to your workspace using the File Browser.\nInstall VPN client: bash     sudo apt install -y apt-transport-https curl     sudo mkdir -p /etc/apt/keyrings     sudo sh -c 'curl -sSfL https://packages.openvpn.net/packages-repo.gpg &gt;/etc/apt/keyrings/openvpn.asc'     sudo sh -c 'echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main\" &gt;&gt;/etc/apt/sources.list.d/openvpn3.list'     sudo apt update     sudo apt install -y openvpn3\nImport profile: openvpn3 config-import --config $client.ovpn\nStart session: openvpn3 session-start --config client.ovpn (prompts for library credentials).\nDisconnect: openvpn3 session-manage --disconnect --config client.ovpn\n\nNote: DNS name resolution may be broken after disconnecting; sudo systemctl restart systemd-resolved might fix it."
+  },
+  {
+    "objectID": "getting-started.html",
+    "href": "getting-started.html",
+    "title": "Getting Started",
+    "section": "",
+    "text": "Visit https://coder.dreamlab.ucsb.edu.\nClick “UCSB Login” and log in using UCSB SSO (via Google).\nClick the button to create a Dreamlab Workspace.\nOn the “Create Workspace” page:\n\nGive it a name.\nCheck “I understand the usage policies”.\nSelect additional software for automatic installation (Rstudio, JupyterLab, Visual Studio Code (Desktop), Visual Studio Code (Web)).\nClick “Create Workspace”.\nCreation may take a few minutes.",
+    "crumbs": [
+      "Getting Started"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#creating-a-workspace",
+    "href": "getting-started.html#creating-a-workspace",
+    "title": "Getting Started",
+    "section": "",
+    "text": "Visit https://coder.dreamlab.ucsb.edu.\nClick “UCSB Login” and log in using UCSB SSO (via Google).\nClick the button to create a Dreamlab Workspace.\nOn the “Create Workspace” page:\n\nGive it a name.\nCheck “I understand the usage policies”.\nSelect additional software for automatic installation (Rstudio, JupyterLab, Visual Studio Code (Desktop), Visual Studio Code (Web)).\nClick “Create Workspace”.\nCreation may take a few minutes.",
+    "crumbs": [
+      "Getting Started"
+    ]
+  },
+  {
+    "objectID": "getting-started.html#workspace-lifecycle",
+    "href": "getting-started.html#workspace-lifecycle",
+    "title": "Getting Started",
+    "section": "Workspace Lifecycle",
+    "text": "Workspace Lifecycle\n\nAutomatic Shutdown: Workspaces shut down after four hours of inactivity.\nResuming: Click the “Start” button in the upper-right corner of the workspace page.\nDeletion: Select “Delete” from the drop-down menu in the upper-right corner. Warning: Deleting the workspace deletes all files.",
+    "crumbs": [
+      "Getting Started"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Workspaces Overview",
+    "section": "",
+    "text": "Coder Workspaces are on-demand virtual machines provided by UCSB Dreamlab with commonly used data science tools. They are accessible to anyone with an active UCSB Net ID.\nhttps://coder.dreamlab.ucsb.edu"
+  },
+  {
+    "objectID": "index.html#key-features-specifications",
+    "href": "index.html#key-features-specifications",
+    "title": "Dreamlab Coder Workspaces",
+    "section": "Key Features & Specifications",
+    "text": "Key Features & Specifications\n\n\n\n\n\n\n\nResource\nDescription\n\n\n\n\nCPU\n4 vCPUs\n\n\nMemory\n16 GiB\n\n\nDisk Storage\n15 GB for OS, 64 GB for user data\n\n\nOperating System\nUbuntu Linux (24.04 LTS)\n\n\nSoftware\nR (v4.5.1) ; RStudio Server (2025.09.0); Pixi (v 0.55.0). Additional software can be installed, using the sudo apt install command."
+  },
+  {
+    "objectID": "index.html#policies",
+    "href": "index.html#policies",
+    "title": "Workspaces Overview",
+    "section": "Policies",
+    "text": "Policies\n\nBackup your data: Data is not backed up; users are responsible for their own backups.\nDeletion: All workspaces are automatically deleted at the end of each quarter.\nLimits: Users may create and use only one workspace at a time. Multiple active workspaces may be deleted without notice.\nMaintenance: Workspaces may be inaccessible during scheduled maintenance windows (announced via email).\nInactivity: Workspaces stop automatically after four hours of inactivity to conserve resources. They can be resumed by clicking the “start” button.\nSoftware Installation: Users may install additional software.\nAccess by Staff: Workspaces may be accessed by staff in the Library or LSIT. Confidential or sensitive information should not be stored."
+  },
+  {
+    "objectID": "admin.html",
+    "href": "admin.html",
+    "title": "Administration",
+    "section": "",
+    "text": "Primarily administered by Seth Erickson (Library) and LSIT members (user/template management)."
+  },
+  {
+    "objectID": "admin.html#administering-the-service",
+    "href": "admin.html#administering-the-service",
+    "title": "Administration",
+    "section": "",
+    "text": "Primarily administered by Seth Erickson (Library) and LSIT members (user/template management)."
+  },
+  {
+    "objectID": "admin.html#messaging-users",
+    "href": "admin.html#messaging-users",
+    "title": "Administration",
+    "section": "Messaging Users",
+    "text": "Messaging Users\nTo generate a list of user emails (requires admin privileges):\ncoder login coder.dreamlab.ucsb.edu\ncoder users list --column email\nThese commands can be run from a coder workspace."
+  },
+  {
+    "objectID": "integrations.html",
+    "href": "integrations.html",
+    "title": "Integrations",
+    "section": "",
+    "text": "Workspaces are automatically configured with an SSH public key, found in account settings under “SSH Keys”, for authentication with Git-based services."
+  },
+  {
+    "objectID": "integrations.html#integrating-with-githubgitlab",
+    "href": "integrations.html#integrating-with-githubgitlab",
+    "title": "Integrations",
+    "section": "",
+    "text": "Workspaces are automatically configured with an SSH public key, found in account settings under “SSH Keys”, for authentication with Git-based services."
+  },
+  {
+    "objectID": "index.html#features-software",
+    "href": "index.html#features-software",
+    "title": "Dreamlab Coder Workspaces",
+    "section": "Features & Software",
+    "text": "Features & Software\n\n\n\n\n\n\n\nResource\nDescription\n\n\n\n\nCPU\n4 vCPUs\n\n\nMemory\n16 GiB\n\n\nDisk Storage\n15 GB for OS, 64 GB for user data\n\n\nOperating System\nUbuntu Linux (24.04 LTS)\n\n\nSoftware\nR (v4.5.1) ; RStudio Server (2025.09.0); Pixi (v 0.55.0). Additional software can be installed, using the sudo apt install command.\n\n\n\nIn addition to the default software installed with Ubuntu Linux (24.04 LTS), workspaces include:\n\nPixi v0.55.0 for python environment management\nR v4.5.1 and RStudio Server 2025.09.0 (installed but not enabled by default)\nGit"
+  },
+  {
+    "objectID": "index.html#technical-specifications",
+    "href": "index.html#technical-specifications",
+    "title": "Workspaces Overview",
+    "section": "Technical Specifications",
+    "text": "Technical Specifications\nDefault workspaces include the following resources:\n\n\n\n\nDescription\n\n\n\n\nCPU\n4 vCPUs\n\n\nMemory\n16 GiB\n\n\nDisk\n15 GB for OS, 64 GB for user data\n\n\nOS\nUbuntu Linux (24.04 LTS)\n\n\n\n\n\n\n\nIn addition to the base operating system (Ubuntu Linux, 24.04 LTS), all workspaces include:\n\npixi v0.55.0 - package manager used to create Python environments\nR v4.5.1 - programming language\ngitv2.43.0 - version control software\ngh v2.80.0 - Github CLI\njq - commandline JSON processr v1.7\n\nAdditional software can be optionally installed and enabled when workspace is created:\n\nRStudio Server (v2025.09.1)\nJupyter Lab\nVS Code Service (for connecting to the workspace using VS Code)\nVS Code Web (runs in the browser)"
+  },
+  {
+    "objectID": "index.html#creating-a-workspace",
+    "href": "index.html#creating-a-workspace",
+    "title": "Workspaces Overview",
+    "section": "Creating a Workspace",
+    "text": "Creating a Workspace\n\nVisit https://coder.dreamlab.ucsb.edu.\nClick “UCSB Login” and log in using UCSB SSO (via Google).\nClick the button to create a Dreamlab Workspace.\nOn the “Create Workspace” page:\n\nGive the workspace a name.\nCheck “I understand the usage policies”.\nSelect additional software to enable.\nClick “Create Workspace”.\nIt may take a few minutes for the workspace to boot."
+  },
+  {
+    "objectID": "index.html#overview",
+    "href": "index.html#overview",
+    "title": "Workspaces Overview",
+    "section": "",
+    "text": "Coder Workspaces are on-demand virtual machines provided by UCSB Dreamlab, running Ubuntu 24.04 LTS with commonly used data science tools. They are accessible to anyone with an active UCSB Net ID. https://coder.dreamlab.ucsb.edu\n\n\n\nResources\nDescription\n\n\n\n\nCPU\n4 vCPUs\n\n\nMemory\n16 GiB\n\n\nDisk\n15 GB for OS, 64 GB for user data\n\n\nOS\nUbuntu Linux (24.04 LTS)\n\n\n\n\n\n\n\nAll workspaces include the following software:\n\npixi v0.55.0 - package manager used to create Python environments\nR v4.5.1 - programming language\ngitv2.43.0 - version control software\ngh v2.80.0 - Github CLI\njqv1.7 - commandline JSON processr\n\nAdditional software can be optionally installed enabled when workspace is created:\n\nRStudio Server (v2025.09.1)\nJupyter Lab\nVS Code Service (for connecting to the workspace using VS Code)\nVS Code Web (runs in the browser)"
+  },
+  {
+    "objectID": "index.html#workspace-lifecycle",
+    "href": "index.html#workspace-lifecycle",
+    "title": "Workspaces Overview",
+    "section": "Workspace Lifecycle",
+    "text": "Workspace Lifecycle\n\nWorkspaces shut down (stop) after four hours of inactivity.\nYou can manually stop a workspace by clicking the “stop” button.\nTo start a stopped workspace, click the workspace’s “Start” button. It may take a few minutes to resume.\nDeleting a workspace deletes all files on the workspace!\nAll workspaces will be deleted at the end of each academic quarter."
+  },
+  {
+    "objectID": "index.html#hardware",
+    "href": "index.html#hardware",
+    "title": "Workspaces Overview",
+    "section": "Hardware",
+    "text": "Hardware\n\n\n\nResources\nDescription\n\n\n\n\nCPU\n4 vCPUs\n\n\nMemory\n16 GiB\n\n\nDisk\n15 GB for OS, 64 GB for user data"
+  },
+  {
+    "objectID": "index.html#software",
+    "href": "index.html#software",
+    "title": "Workspaces Overview",
+    "section": "Software",
+    "text": "Software\nAll workspaces include the following software:\n\nUbuntu Linux (24.04 LTS) - Operating System\npixi v0.55.0 - Python package manager\nR v4.5.1\ngitv2.43.0 - version control software\ngh v2.80.0 - Github CLI\njqv1.7 - command line JSON processor\n\nService can be enabled when the workspace is created:\n\nRStudio Server v2025.09.1 - to run RStudio in the browser\nJupyter Lab Server v4.4.9 - to run Jupyter Notebooks in the browser\nVS Code Web - to run VS Code in the browser\nVS Code Service - connect to the workspace using VS Code\n\nAdditional software may be installed using apt or pixi."
+  }
+]

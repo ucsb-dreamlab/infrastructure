@@ -1,7 +1,0 @@
----
-title: "Integrations"
----
-
-## Integrating with GitHub/GitLab
-
-Workspaces are automatically configured with an SSH public key, found in account settings under "SSH Keys", for authentication with Git-based services.
