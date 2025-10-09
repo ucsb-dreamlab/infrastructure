@@ -1,8 +1,6 @@
 ---
-title: "Administration"
+title: "Administration the service"
 ---
-
-## Administering the Service
 
 Primarily administered by Seth Erickson (Library) and LSIT members (user/template management).
 
