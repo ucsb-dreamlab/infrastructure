@@ -1,6 +1,6 @@
 project:
   type: website
-  output-dir: ../docs-build
+  output-dir: ../docs
 
 website:
   title: "DREAM Lab Coder Workspaces"
