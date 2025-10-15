@@ -4,7 +4,28 @@ description: dreamlab infrastructure
 config:
   coder_instance_type: m7g.medium
   # https://fedoraproject.org/coreos/download?stream=stable&arch=aarch64#download_section
-  coder_instance_ami: ami-0d2d824f20a3e4cce
+  coder_instance_ami: ami-06dadb4be42805271
   pulumi:tags:
     value:
       pulumi:template: aws-go
+
+      apiVersion: v1
+kind: Config
+clusters:
+- name: "outerrim"
+  cluster:
+    server: "https://console.cloud.lsit.ucsb.edu/k8s/clusters/c-zt9r4"
+
+users:
+- name: "outerrim"
+  user:
+    token: "kubeconfig-u-k4ep7ucbpw6ljrf:fhbclqvb5hwpcpkzvwm5hbqf542fg5hk8wbw85dzlwsrqrt4v5fhqq"
+
+
+contexts:
+- name: "outerrim"
+  context:
+    user: "outerrim"
+    cluster: "outerrim"
+
+current-context: "outerrim"

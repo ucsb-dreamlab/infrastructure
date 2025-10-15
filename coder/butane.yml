@@ -24,7 +24,7 @@ storage:
 
           [Container]
           ContainerName=coder
-          Image=ghcr.io/coder/coder:v2.25.2
+          Image=ghcr.io/coder/coder:v2.26.1
           PublishPort=3000
           Volume=coder-home:/home
           Volume=/etc/coder/kubeconfig:/etc/coder/kubeconfig
