@@ -1,5 +1,5 @@
 data "harvester_image" "os_image" {
-  display_name = "coder-rstudio-docker-20251208"
+  display_name = "coder-rstudio-docker-20251218"
   namespace = var.namespace
 }
 
@@ -117,6 +117,10 @@ resource "coder_agent" "workspace" {
   startup_script = <<-EOT
     # install pixi
     curl -fsSL https://pixi.sh/install.sh | sh
+
+    # install uv 
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source $HOME/.local/bin/env
   EOT
 
   display_apps {
