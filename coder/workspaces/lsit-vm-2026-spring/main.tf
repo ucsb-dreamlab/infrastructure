@@ -1,5 +1,5 @@
 data "harvester_image" "os_image" {
-  display_name = "coder-rstudio-docker-20250930"
+  display_name = "coder-base-20260309"
   namespace = var.namespace
 }
 
@@ -9,7 +9,7 @@ locals {
   # names used for coder's resources in harvester: needs to be valid for
   # kubernetes IDs.
   k8s_name = lower(replace("coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.env.name}"," ","_"))
-  workspace_agreement = "https://github.com/ucsb-dreamlab/infrastructure/wiki/Coder-Workspaces#policies"
+  workspace_agreement = "https://ucsb-dreamlab.github.io/coder-docs/#policies"
 }
 
 
@@ -115,8 +115,17 @@ resource "coder_agent" "workspace" {
   os             = "linux"
   
   startup_script = <<-EOT
-    # install pixi
-    curl -fsSL https://pixi.sh/install.sh | sh
+    if [ -d "$HOME/.local/bin" ]; then
+      echo "dreamlab userspace already installed"
+    else 
+      echo "installing dreamlab userspace..."
+      cp -r /var/dreamlab/.local $HOME
+      cp -r /var/dreamlab/.pixi  $HOME
+      cp -r /var/dreamlab/.nvm   $HOME
+      sudo chown -R coder:coder $HOME/.local $HOME/.pixi $HOME/.nvm
+      cat /var/dreamlab/bashrc-additions.sh >> $HOME/.bashrc
+      echo "completed dreamlab userspace install"
+    fi
   EOT
 
   display_apps {
@@ -180,10 +189,21 @@ module "jupyterlab" {
 module "filebrowser" {
   count    = data.coder_workspace.env.start_count
   source   = "registry.coder.com/modules/filebrowser/coder"
-  version  = "1.1.2"
+  version  = "1.1.3"
   order    = 4
   agent_id = coder_agent.workspace[0].id
   database_path = ".config/filebrowser.db"
+}
+
+resource "coder_app" "docs" {
+  count = data.coder_workspace.env.start_count
+  slug = "docs"
+  agent_id = coder_agent.workspace[0].id
+  display_name = "Help"
+  open_in = "tab"
+  order = 5
+  url = "https://ucsb-dreamlab.github.io/coder-docs"
+  external = true
 }
 
 # harvester requires an ssh key in the vm's userdata. This isn't actually used.
