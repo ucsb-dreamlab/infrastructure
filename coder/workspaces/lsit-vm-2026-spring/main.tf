@@ -119,11 +119,11 @@ resource "coder_agent" "workspace" {
       echo "dreamlab userspace already installed"
     else 
       echo "installing dreamlab userspace..."
-      cp -r /var/dreamlab/.local $HOME
-      cp -r /var/dreamlab/.pixi  $HOME
-      cp -r /var/dreamlab/.nvm   $HOME
-      sudo chown -R coder:coder $HOME/.local $HOME/.pixi $HOME/.nvm
-      cat /var/dreamlab/bashrc-additions.sh >> $HOME/.bashrc
+      ln -s /var/coder/.local  $HOME
+      ln -s /var/coder/.config $HOME
+      ln -s /var/coder/.pixi   $HOME
+      ln -s /var/coder/.nvm    $HOME
+      cat /var/coder/.coder-env.sh >> $HOME/.bashrc
       echo "completed dreamlab userspace install"
     fi
   EOT

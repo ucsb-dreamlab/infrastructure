@@ -4,8 +4,6 @@ users:
   - default
   - name: ${linux_user}
     sudo: ALL=(ALL) NOPASSWD:ALL
-    shell: /bin/bash
-    groups: docker
     ssh_authorized_keys:
       - ${ssh_authorized_key}
 
@@ -48,6 +46,13 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
+  # create coder home dir in home mount
+  - mkdir -p /home/coder
+  - cp -a /etc/skel/. /home/coder/
+  - chown -R coder:coder /home/coder
+  - chmod 700 /home/coder
+  - usermod -d /home/coder coder
+
   - systemctl enable --now qemu-guest-agent.service
   - systemctl enable --now coder-agent.service
 bootcmd:

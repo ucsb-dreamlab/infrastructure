@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
+set -e
 
 PIXIBIN="$HOME/.pixi/bin"
 PIXI="$PIXIBIN/pixi"
 JUPYTER="$PIXIBIN/jupyter"
 
-# install pixi
-if ! command -v $PIXI > /dev/null 2>&1; then
-   curl -fsSL https://pixi.sh/install.sh | sh
-   source $HOME/.bashrc
-fi
+# wait for pixi to become available (up a minute)
+PIXI_WAIT=0
+until command -v $PIXI > /dev/null 2>&1; do
+  if [ $PIXI_WAIT -ge 60 ]; then
+    printf "timed out waiting for pixi to become available"
+    exit 1
+  fi
+  echo "waiting for $PIXI..."
+  sleep 2
+  PIXI_WAIT=$((PIXI_WAIT + 2))
+done
 
 if [ -n "${BASE_URL}" ]; then
   BASE_URL_FLAG="--ServerApp.base_url=${BASE_URL}"
 fi
-
-BOLD='\033[0;1m'
 
 # check if jupyterlab is installed
 if ! command -v $JUPYTER > /dev/null 2>&1; then

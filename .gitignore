@@ -1,6 +1,7 @@
 .terraform
 .terraform.lock.hcl
 **.tfstate
+*.tfvars
 .tool-versions
 keys
 openrc.sh
